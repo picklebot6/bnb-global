@@ -37,7 +37,7 @@ jobs:
 
       - name: Run main workflow
         env:
-          BNB_BASE_URL: ${{ vars.BNB_BASE_URL }}
+          BNB_BASE_URL: ${{ secrets.BNB_BASE_URL || vars.BNB_BASE_URL }}
           BNB_USERNAME: ${{ secrets.BNB_USERNAME }}
           BNB_PASSWORD: ${{ secrets.BNB_PASSWORD }}
         run: |
