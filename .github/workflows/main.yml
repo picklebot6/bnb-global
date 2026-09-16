@@ -50,11 +50,33 @@ jobs:
           echo "::add-mask::$BNB_BASE_URL"
           npm run main
 
-      - name: Upload workflow videos
+      - name: Convert recordings to MP4
+        if: always()
+        shell: bash
+        run: |
+          shopt -s globstar nullglob
+          videos=(test-results/**/*.webm)
+          if [ "${#videos[@]}" -eq 0 ]; then
+            echo "No recordings were produced."
+            exit 0
+          fi
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          for video in "${videos[@]}"; do
+            ffmpeg -hide_banner -loglevel error -y -i "$video" \
+              -c:v libx264 -preset fast -crf 23 \
+              -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+              -pix_fmt yuv420p -an -movflags +faststart \
+              "${video%.webm}.mp4"
+          done
+
+      - name: Upload MP4 workflow videos
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: workflow-videos-${{ github.run_id }}-${{ github.run_attempt }}
-          path: test-results/**/*.webm
+          path: test-results/**/*.mp4
           if-no-files-found: warn
           retention-days: 7
