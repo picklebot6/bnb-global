@@ -1,11 +1,15 @@
 import { resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 
-loadEnvFile(resolve(__dirname, '../.env'));
+const envPath = resolve(__dirname, '../.env');
+if (!process.env.CI && existsSync(envPath)) {
+  loadEnvFile(envPath);
+}
 
 const baseUrl = process.env.BNB_BASE_URL;
 if (!baseUrl) {
-  throw new Error('Set BNB_BASE_URL in your .env file before running the workflow.');
+  throw new Error('Set BNB_BASE_URL in your environment or .env file before running the workflow.');
 }
 
 export const config = {

@@ -7,7 +7,7 @@ export async function login(page: Page, url: string): Promise<void> {
   const password = process.env.BNB_PASSWORD;
 
   if (!username || !password) {
-    throw new Error('Set BNB_USERNAME and BNB_PASSWORD in your .env file before running login.');
+    throw new Error('Set BNB_USERNAME and BNB_PASSWORD in your environment or .env file before running login.');
   }
 
   await page.goto(url);

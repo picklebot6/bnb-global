@@ -6,7 +6,8 @@ export default defineConfig({
   testDir: './tests',
   use: {
     browserName: 'chromium',
-    headless: false,
+    headless: !!process.env.CI,
+    video: process.env.CI ? 'on' : 'off',
     baseURL: config.baseUrl,
   },
 });

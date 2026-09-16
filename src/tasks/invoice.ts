@@ -7,7 +7,9 @@ export async function doInvoice(page: Page): Promise<void> {
   await click(page, 'Invoice Option', homeSelectors.invoiceOption);
   await wait(page, 'Invoice Label', homeSelectors.invoiceLabel);
   await click(page, 'Invoice Label', homeSelectors.invoiceLabel);
-  await page.pause();
+  if (!process.env.CI) {
+    await page.pause();
+  }
 
   await page.waitForTimeout(5000);
 }
