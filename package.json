@@ -1,0 +1,15 @@
+{
+  "name": "bnb-global",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "main": "playwright test tests/workflow.spec.ts",
+    "test:debug": "playwright test --debug",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}
