@@ -72,6 +72,15 @@ jobs:
               "${video%.webm}.mp4"
           done
 
+      - name: Upload invoice PDFs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: invoice-pdfs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/pdf/*.pdf
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Upload MP4 workflow videos
         if: always()
         uses: actions/upload-artifact@v7
