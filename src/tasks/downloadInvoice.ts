@@ -10,17 +10,14 @@ export async function goToInvoice(page: Page): Promise<void> {
   await wait(page, 'Invoice Label', homeSelectors.invoiceLabel);
   await click(page, 'Invoice Label', homeSelectors.invoiceLabel);
   await page.waitForTimeout(5000);
-  await click(page, 'Invoice Date:', invoiceSelectors.selectInvoiceDate);
-  await click(page, 'Yesterday', invoiceSelectors.yesterdayOption);
-  await page.waitForTimeout(5000);
-
+  await wait(page,'Invoice Search',invoiceSelectors.invSearch);
 }
 
-export async function downloadInvoice(page: Page, companyName: string): Promise<string> {
-  await write(page, 'Company', invoiceSelectors.searchCompanyName, companyName);
+export async function downloadInvoice(page: Page, invNumber: string): Promise<string> {
+  await write(page, 'Company', invoiceSelectors.invSearch, invNumber);
   await page.keyboard.press('Enter');
   await page.waitForTimeout(5000);
-  await click(page, 'Invoice No', invoiceSelectors.invoiceNum);
+  await click(page, 'Searched Invoice No', invoiceSelectors.invoiceNum(invNumber));
 
   // Print Invoice opens a separate page containing the printable document.
   await click(page, 'Print Dropdown', invoiceSelectors.printDropdown);
@@ -36,7 +33,7 @@ export async function downloadInvoice(page: Page, companyName: string): Promise<
   const safeFileName = automaticFileName
     .trim()
     .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
-    .replace(/[. ]+$/g, '') || `${companyName}-invoice`;
+    .replace(/[. ]+$/g, '') || `${invNumber}-invoice`;
   const pdfFileName = safeFileName.toLowerCase().endsWith('.pdf')
     ? safeFileName
     : `${safeFileName}.pdf`;

@@ -1,5 +1,7 @@
 import { test, type Page } from '@playwright/test';
 import { config } from '../config';
+import { readdir, unlink } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 export async function wait(page: Page, name: string, xpath: string) {
   const element = page.locator(`xpath=${xpath}`);
@@ -56,4 +58,23 @@ export async function read(
     await page.waitForTimeout(config.actionDelayMs);
     return text;
   });
+}
+
+//clean up pdfs
+export async function deletePdfs(): Promise<void> {
+  const pdfDir = resolve('output/pdf');
+
+  try {
+    const files = await readdir(pdfDir);
+
+    await Promise.all(
+      files
+        .filter(file => file.toLowerCase().endsWith('.pdf'))
+        .map(file => unlink(resolve(pdfDir, file))),
+    );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error;
+    }
+  }
 }
