@@ -40,6 +40,9 @@ jobs:
 
       - name: Run invoice workflow
         env:
+          BNB_BASE_URL: ${{ secrets.BNB_BASE_URL }}
+          BNB_USERNAME: ${{ secrets.BNB_USERNAME }}
+          BNB_PASSWORD: ${{ secrets.BNB_PASSWORD }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
@@ -56,6 +59,8 @@ jobs:
           done
 
           echo "::add-mask::$BNB_BASE_URL"
+          echo "::add-mask::$BNB_USERNAME"
+          echo "::add-mask::$BNB_PASSWORD"
 
           npm run di
 
