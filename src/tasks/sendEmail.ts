@@ -37,7 +37,6 @@ export async function sendEmail({
   const clientSecret = required('SMTP_CLIENT_SECRET');
   const refreshToken = required('SMTP_REFRESH_TOKEN');
 
-  const from = process.env.SMTP_FROM || user;
   const port = Number(process.env.SMTP_PORT || '587');
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -83,7 +82,7 @@ export async function sendEmail({
   console.log(`Sending email with ${files.length} attachment(s)`);
 
   const result = await transport.sendMail({
-    from,
+    from: user,
     to,
     subject,
     text,

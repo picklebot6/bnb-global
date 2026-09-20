@@ -14,7 +14,7 @@ export async function goToInvoice(page: Page): Promise<void> {
 }
 
 export async function downloadInvoice(page: Page, invNumber: string): Promise<string> {
-  await write(page, 'Company', invoiceSelectors.invSearch, invNumber);
+  await write(page, 'Invoice Number', invoiceSelectors.invSearch, invNumber);
   await page.keyboard.press('Enter');
   await page.waitForTimeout(5000);
   await click(page, 'Searched Invoice No', invoiceSelectors.invoiceNum(invNumber));

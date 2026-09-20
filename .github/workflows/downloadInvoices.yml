@@ -35,11 +35,16 @@ jobs:
       - name: Check TypeScript
         run: npm run typecheck
 
-      - name: Run Download Invoices Workflow
-        env:
-          BNB_BASE_URL: ${{ secrets.BNB_BASE_URL || vars.BNB_BASE_URL }}
-          BNB_USERNAME: ${{ secrets.BNB_USERNAME }}
-          BNB_PASSWORD: ${{ secrets.BNB_PASSWORD }}
+      - name: Run invoice workflow
+          run: npm run di
+          env:
+            SMTP_HOST: ${{ secrets.SMTP_HOST }}
+            SMTP_PORT: ${{ secrets.SMTP_PORT }}
+            SMTP_USER: ${{ secrets.SMTP_USER }}
+            SMTP_CLIENT_ID: ${{ secrets.SMTP_CLIENT_ID }}
+            SMTP_CLIENT_SECRET: ${{ secrets.SMTP_CLIENT_SECRET }}
+            SMTP_REFRESH_TOKEN: ${{ secrets.SMTP_REFRESH_TOKEN }}
+            SMTP_FROM: ${{ secrets.SMTP_FROM }}
         run: |
           for name in BNB_BASE_URL BNB_USERNAME BNB_PASSWORD; do
             if [ -z "${!name}" ]; then
