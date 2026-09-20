@@ -3,7 +3,7 @@ import { config } from './src/config';
 
 export default defineConfig({
   timeout: 15 * 60 * 1_000, // 15 minutes for the entire workflow
-  testDir: './tests',
+  testDir: './projects',
   use: {
     browserName: 'chromium',
     headless: !!process.env.CI,

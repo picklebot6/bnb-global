@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Page } from '@playwright/test';
-import { click, write, wait } from '../actions';
+import { click, write, wait } from '../helpers/actions';
 import { homeSelectors, invoiceSelectors } from '../helpers/selectors';
 
 export async function goToInvoice(page: Page): Promise<void> {

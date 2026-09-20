@@ -35,7 +35,7 @@ jobs:
       - name: Check TypeScript
         run: npm run typecheck
 
-      - name: Run main workflow
+      - name: Run Download Invoices Workflow
         env:
           BNB_BASE_URL: ${{ secrets.BNB_BASE_URL || vars.BNB_BASE_URL }}
           BNB_USERNAME: ${{ secrets.BNB_USERNAME }}
@@ -48,7 +48,7 @@ jobs:
             fi
           done
           echo "::add-mask::$BNB_BASE_URL"
-          npm run main
+          npm run di
 
       - name: Convert recordings to MP4
         if: always()

@@ -1,5 +1,5 @@
 import { test, type Page } from '@playwright/test';
-import { config } from './config';
+import { config } from '../config';
 
 export async function wait(page: Page, name: string, xpath: string) {
   const element = page.locator(`xpath=${xpath}`);

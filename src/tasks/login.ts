@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { click, write, wait } from '../actions';
+import { click, write, wait } from '../helpers/actions';
 import { loginSelectors, homeSelectors } from '../helpers/selectors';
 
 export async function login(page: Page, url: string): Promise<void> {
