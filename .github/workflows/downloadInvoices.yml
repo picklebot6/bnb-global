@@ -1,4 +1,4 @@
-name: Run BNB workflow
+name: Run BNB Workflow - Download Invoices
 
 on:
   workflow_dispatch:
