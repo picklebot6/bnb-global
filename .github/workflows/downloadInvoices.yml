@@ -46,10 +46,9 @@ jobs:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_CLIENT_ID: ${{ secrets.SMTP_CLIENT_ID }}
-          SMTP_CLIENT_SECRET: ${{ secrets.SMTP_CLIENT_SECRET }}
-          SMTP_REFRESH_TOKEN: ${{ secrets.SMTP_REFRESH_TOKEN }}
-          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          G_AUTH_CLIENT_ID: ${{ secrets.G_AUTH_CLIENT_ID }}
+          G_AUTH_CLIENT_SECRET: ${{ secrets.G_AUTH_CLIENT_SECRET }}
+          G_AUTH_REFRESH_TOKEN: ${{ secrets.G_AUTH_REFRESH_TOKEN }}
         run: |
           for name in BNB_BASE_URL BNB_USERNAME BNB_PASSWORD; do
             if [ -z "${!name}" ]; then
@@ -63,6 +62,13 @@ jobs:
           echo "::add-mask::$BNB_PASSWORD"
 
           npm run di
+
+      - name: Remove downloaded invoice PDFs
+        if: always()
+        run: |
+          if [ -d output/pdf ]; then
+            find output/pdf -type f -name '*.pdf' -delete
+          fi
 
       - name: Convert recordings to MP4
         if: always()
@@ -94,15 +100,6 @@ jobs:
               -movflags +faststart \
               "${video%.webm}.mp4"
           done
-
-      - name: Upload invoice PDFs
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: invoice-pdfs-${{ github.run_id }}-${{ github.run_attempt }}
-          path: output/pdf/*.pdf
-          if-no-files-found: warn
-          retention-days: 7
 
       - name: Upload MP4 workflow videos
         if: always()

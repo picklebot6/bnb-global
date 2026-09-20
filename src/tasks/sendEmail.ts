@@ -33,9 +33,9 @@ export async function sendEmail({
 
   const host = required('SMTP_HOST');
   const user = required('SMTP_USER');
-  const clientId = required('SMTP_CLIENT_ID');
-  const clientSecret = required('SMTP_CLIENT_SECRET');
-  const refreshToken = required('SMTP_REFRESH_TOKEN');
+  const clientId = required('G_AUTH_CLIENT_ID');
+  const clientSecret = required('G_AUTH_CLIENT_SECRET');
+  const refreshToken = required('G_AUTH_REFRESH_TOKEN');
 
   const port = Number(process.env.SMTP_PORT || '587');
 

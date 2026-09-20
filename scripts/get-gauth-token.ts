@@ -5,11 +5,11 @@ import { loadEnvFile } from 'node:process';
 
 loadEnvFile('.env');
 
-const clientId = process.env.SMTP_CLIENT_ID;
-const clientSecret = process.env.SMTP_CLIENT_SECRET;
+const clientId = process.env.G_AUTH_CLIENT_ID;
+const clientSecret = process.env.G_AUTH_CLIENT_SECRET;
 
 if (!clientId || !clientSecret) {
-  throw new Error('SMTP_CLIENT_ID and SMTP_CLIENT_SECRET must be set in .env');
+  throw new Error('G_AUTH_CLIENT_ID and G_AUTH_CLIENT_SECRET must be set in .env');
 }
 
 const oauth2Client = new google.auth.OAuth2(
@@ -22,7 +22,10 @@ async function main(): Promise<void> {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: ['https://mail.google.com/'],
+    scope: [
+      'https://mail.google.com/',
+      'https://www.googleapis.com/auth/spreadsheets',
+    ],
   });
 
   console.log('\nOpen this URL in your browser:\n');
