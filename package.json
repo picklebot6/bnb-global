@@ -5,6 +5,7 @@
   "scripts": {
     "di": "playwright test projects/downloadInvoices.spec.ts",
     "pso": "playwright test projects/processSalesOrders.spec.ts",
+    "ucl": "playwright test projects/updateCustomerList.spec.ts",
     "test:debug": "playwright test --debug",
     "typecheck": "tsc --noEmit"
   },

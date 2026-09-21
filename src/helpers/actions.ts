@@ -16,6 +16,29 @@ export async function wait(page: Page, name: string, xpath: string) {
   return element;
 }
 
+export async function waitUntilNotExists(
+  page: Page,
+  name: string,
+  xpaths: string | string[],
+): Promise<void> {
+  await test.step(`Wait until gone: ${name}`, async () => {
+    const xpathList = Array.isArray(xpaths) ? xpaths : [xpaths];
+
+    console.log(`Waiting for ${name} to no longer exist`);
+
+    await Promise.all(
+      xpathList.map(xpath =>
+        page.locator(`xpath=${xpath}`).waitFor({
+          state: 'detached',
+          timeout: config.elementNotExistTimeoutMs,
+        }),
+      ),
+    );
+
+    await page.waitForTimeout(config.actionDelayMs);
+  });
+}
+
 /** Replace the contents of an input, textarea, or editable element. */
 export async function write(
   page: Page,

@@ -252,3 +252,17 @@ function columnIndexToLetter(index: number): string {
 
   return column;
 }
+
+export async function readEntireSheet(
+  spreadsheetId: string,
+  sheetName: string,
+): Promise<string[][]> {
+  const sheets = getSheetsClient();
+
+  const result = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: sheetName,
+  });
+
+  return (result.data.values ?? []) as string[][];
+}

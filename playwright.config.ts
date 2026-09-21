@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 import { config } from './src/config';
 
 export default defineConfig({
-  timeout: 15 * 60 * 1_000, // 15 minutes for the entire workflow
+  timeout: 60 * 60 * 1_000, // 15 minutes for the entire workflow
   testDir: './projects',
   use: {
     browserName: 'chromium',
