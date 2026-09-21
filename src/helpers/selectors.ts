@@ -10,7 +10,7 @@ export const homeSelectors = {
   invoiceLabel: "//span[text()='Invoice']",
   salesDropdown: "//li[@id='mnu-sales']",
   salesOption: "//li[text()='SO List']",
-
+  refresh: "(//button[contains(@class,'loading')])[1]",
 } as const
 
 export const invoiceSelectors = {

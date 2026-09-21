@@ -1,17 +1,13 @@
-import { selectors, type Page } from '@playwright/test';
+import { type Page } from '@playwright/test';
 import { click, write, wait, waitUntilNotExists } from '../helpers/actions';
-import { loginSelectors, homeSelectors, salesSelectors } from '../helpers/selectors';
-
-async function waitForLoad(page: Page): Promise<void> {
-  await page.waitForTimeout(3000);
-  await waitUntilNotExists(page,'Loading/Wait elements', [salesSelectors.loading,salesSelectors.pleaseWait]);
-  await page.waitForTimeout(2000);
-}
+import { homeSelectors, salesSelectors } from '../helpers/selectors';
+import { waitForLoad } from '../helpers/actions';
+import { config } from '../config'
 
 export async function goToSales(page: Page): Promise<void> {
   await click(page, 'Sales Dropdown', homeSelectors.salesDropdown);
   await click(page, 'Sales List Option', homeSelectors.salesOption);
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(config.windowChangeDelayMs);
   await wait(page,'Status Dropdown', salesSelectors.statusDropdown);
 }
 
@@ -46,13 +42,23 @@ export async function processSalesOrder(page: Page): Promise<void> {
 
   //close
   await click(page,'Close Pick List',salesSelectors.closePickList);
+  await page.waitForTimeout(config.windowChangeDelayMs);
+}
 
-  await page.pause();
+export async function refreshList(page: Page): Promise<void> {
+  await click(page, 'Sales Dropdown', homeSelectors.salesDropdown);
+  await click(page, 'Sales List Option', homeSelectors.salesOption);
+  await page.waitForTimeout(config.windowChangeDelayMs);
+  await wait(page,'Status Dropdown', salesSelectors.statusDropdown);
 }
 
 export async function salesOrderExists(page: Page): Promise<Boolean> {
   const count = await page.locator(salesSelectors.firstSalesOrder).count()
   if (count > 0) {
+    console.log("At least one sales order exists")
     return true;
-  } else {return false}
+  } else {
+    console.log("No sales order exists")
+    return false
+  }
 }

@@ -17,6 +17,7 @@ export const config = {
   elementNotExistTimeoutMs: 60_000,
   preActionDelayMs: 500,
   actionDelayMs: 1_000,
+  windowChangeDelayMs: 5000,
   baseUrl,
   invoicesSheet: "1gAlqu4ZREO_Jdw72CK85-yFUq5CbzCM-7MR9_fUqnYk",
   invoicesSheetCustomerMappingTab: "Customer Mapping",

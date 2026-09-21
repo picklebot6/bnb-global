@@ -5,6 +5,7 @@ import { sendEmail } from '../tasks/sendEmail';
 import { config } from '../config';
 import { readEntireSheet, readSheet, updateCellByRowValue } from '../tasks/gSheets';
 import { deletePdfs } from '../helpers/actions';
+import { selectMenu } from '../tasks/general';
 
 export async function main(page: Page): Promise<void> {
   // clean up: remove any .pdf files
@@ -35,7 +36,7 @@ export async function main(page: Page): Promise<void> {
 
   // login and navigate to invoice list
   await login(page, config.baseUrl);
-  await goToInvoice(page);
+  await selectMenu(page, "Invoice");
 
   // download invoice
   const invoicePdfPath = await downloadInvoice(page, 'OM98996');

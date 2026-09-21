@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { click, write, wait } from '../helpers/actions';
 import { loginSelectors, homeSelectors } from '../helpers/selectors';
+import { config } from '../config'
 
 export async function login(page: Page, url: string): Promise<void> {
   const username = process.env.BNB_USERNAME;
@@ -15,4 +16,5 @@ export async function login(page: Page, url: string): Promise<void> {
   await write(page, 'Password', loginSelectors.password, password);
   await click(page, 'Login', loginSelectors.signIn);
   await wait(page, "Invoice Dropdown", homeSelectors.invoiceDropdown);
+  await page.waitForTimeout(config.windowChangeDelayMs);
 }

@@ -2,6 +2,8 @@ import { test, type Page } from '@playwright/test';
 import { config } from '../config';
 import { readdir, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { salesSelectors } from '../helpers/selectors';
+
 
 export async function wait(page: Page, name: string, xpath: string) {
   const element = page.locator(`xpath=${xpath}`);
@@ -100,4 +102,10 @@ export async function deletePdfs(): Promise<void> {
       throw error;
     }
   }
+}
+
+export async function waitForLoad(page: Page): Promise<void> {
+  await page.waitForTimeout(3000);
+  await waitUntilNotExists(page,'Loading/Wait elements', [salesSelectors.loading,salesSelectors.pleaseWait]);
+  await page.waitForTimeout(1000);
 }
