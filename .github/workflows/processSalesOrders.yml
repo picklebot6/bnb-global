@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   process-sales-orders:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
 
     env:
