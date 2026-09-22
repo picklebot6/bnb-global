@@ -57,9 +57,21 @@ async function checkSession() {
 function showView(authenticated) {
   $('loginView').classList.toggle('hidden', authenticated);
   $('appView').classList.toggle('hidden', !authenticated);
+  $('psoView').classList.add('hidden');
 }
 
-async function runWorkflow(id) {
+function showPsoView() {
+  $('loginView').classList.add('hidden');
+  $('appView').classList.add('hidden');
+  $('psoView').classList.remove('hidden');
+}
+
+function showAppView() {
+  $('psoView').classList.add('hidden');
+  $('appView').classList.remove('hidden');
+}
+
+async function runWorkflow(id, inputs = {}) {
   const button = $(workflows[id].buttonId);
   const status = $(workflows[id].statusId);
 
@@ -76,7 +88,7 @@ async function runWorkflow(id) {
       `/api/workflows/${id}/dispatch`,
       {
         method: 'POST',
-        body: '{}',
+        body: JSON.stringify(inputs),
       },
     );
 
@@ -137,16 +149,6 @@ function renderRuns(results) {
     .map(run => {
       const label =
         workflows[run.workflowId].label;
-
-      const state =
-        run.conclusion === 'success'
-          ? 'success'
-          : (
-              run.conclusion === 'failure' ||
-              run.conclusion === 'cancelled'
-            )
-            ? 'failure'
-            : 'running';
 
       const status =
         run.status === 'completed'
@@ -247,7 +249,7 @@ async function refreshAll() {
 
 $('loginForm').addEventListener(
   'submit',
-  async (event) => {
+  async event => {
     event.preventDefault();
 
     $('loginError').textContent = '';
@@ -300,9 +302,87 @@ $('downloadInvoices').addEventListener(
   () => runWorkflow('downloadInvoices'),
 );
 
+/*
+ * Process Sales Orders
+ */
+
 $('processSalesOrders').addEventListener(
   'click',
-  () => runWorkflow('processSalesOrders'),
+  () => {
+    // Reset selections every time the page is opened.
+    $('psoAll').checked = false;
+    $('psoChloe').checked = false;
+    $('psoChloe').disabled = false;
+    $('psoChloeOption').classList.remove('disabled');
+
+    showPsoView();
+  },
+);
+
+$('psoAll').addEventListener(
+  'change',
+  () => {
+    const allSelected = $('psoAll').checked;
+
+    $('psoChloe').disabled = allSelected;
+    $('psoChloeOption').classList.toggle(
+      'disabled',
+      allSelected,
+    );
+
+    if (allSelected) {
+      $('psoChloe').checked = false;
+    }
+  },
+);
+
+$('psoBack').addEventListener(
+  'click',
+  () => {
+    showAppView();
+  },
+);
+
+$('psoRun').addEventListener(
+  'click',
+  async () => {
+    const allSelected = $('psoAll').checked;
+
+    const users = allSelected
+      ? ['all']
+      : Array.from(
+          document.querySelectorAll(
+            '.psoUser:checked',
+          ),
+        ).map(checkbox => checkbox.value);
+
+    if (users.length === 0) {
+      alert('Please select at least one user.');
+      return;
+    }
+
+    try {
+      $('psoRun').disabled = true;
+
+      await request(
+        '/api/workflows/processSalesOrders/dispatch',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            users,
+          }),
+        },
+      );
+
+      showAppView();
+
+      await refreshAll();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      $('psoRun').disabled = false;
+    }
+  },
 );
 
 checkSession().catch(() =>

@@ -4,9 +4,18 @@ import { goToSales, salesOrderExists, setStatusToOpen, processSalesOrder, filter
 import { sendEmail } from '../tasks/sendEmail';
 import { config } from '../config';
 import { refresh, selectMenu } from '../tasks/general';
+import { getSalesOrderUsers } from '../utils/workflowInputs';
+
 
 
 export async function main(page: Page): Promise<void> {
+  // input users
+  const users = getSalesOrderUsers();
+
+  console.log('Selected users:', users);
+  console.log(typeof users)
+  await page.pause();
+
   // login and navigate to invoice list
   await login(page, config.baseUrl);
   await selectMenu(page, "Sales");

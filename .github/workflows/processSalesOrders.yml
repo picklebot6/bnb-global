@@ -3,6 +3,11 @@ run-name: Process Sales Orders
 
 on:
   workflow_dispatch:
+    inputs:
+      user:
+        description: 'User 선택하세요'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -43,6 +48,7 @@ jobs:
           BNB_BASE_URL: ${{ secrets.BNB_BASE_URL }}
           BNB_USERNAME: ${{ secrets.BNB_USERNAME }}
           BNB_PASSWORD: ${{ secrets.BNB_PASSWORD }}
+          SALES_ORDER_USERS: ${{ inputs.user }}
         run: |
           for name in BNB_BASE_URL BNB_USERNAME BNB_PASSWORD; do
             if [ -z "${!name}" ]; then
