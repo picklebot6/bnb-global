@@ -16,7 +16,7 @@ const REF = 'main';
 
 const WORKFLOWS: Record<string, WorkflowConfig> = {
   downloadInvoices: {
-    file: 'downloadInvoicess.yml',
+    file: 'downloadInvoices.yml',
     label: 'Download Invoices',
   },
   processSalesOrders: {

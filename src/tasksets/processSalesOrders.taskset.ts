@@ -12,10 +12,10 @@ export async function main(page: Page): Promise<void> {
   await selectMenu(page, "Sales");
   await setStatusToOpen(page);
 
-  while (await salesOrderExists(page)) {
-    await processSalesOrder(page);
-    // await page.pause();
-    await refresh(page);
-  }
+  // while (await salesOrderExists(page)) {
+  //   await processSalesOrder(page);
+  //   // await page.pause();
+  //   await refresh(page);
+  // }
 
 }

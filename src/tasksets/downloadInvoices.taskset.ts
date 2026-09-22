@@ -31,7 +31,6 @@ export async function main(page: Page): Promise<void> {
       downloadedInvoices.push(await downloadInvoice(page, invoiceNumber))
     }
 
-    await page.pause();
 
     //send email
     await sendEmail({
@@ -41,6 +40,8 @@ export async function main(page: Page): Promise<void> {
       text: wqItem["emailBody"],
       attachments: downloadedInvoices,
     });
+
+    await page.pause();
 
       // update status of corresponding invoices that were downloaded
       // await updateCellByRowValue(
