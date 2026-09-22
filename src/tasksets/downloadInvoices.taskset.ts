@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { login } from '../tasks/login';
-import { downloadInvoice, goToInvoice } from '../tasks/downloadInvoice';
+import { downloadInvoice, getWorkqueueData, goToInvoice } from '../tasks/downloadInvoice';
 import { sendEmail } from '../tasks/sendEmail';
 import { config } from '../config';
 import { readEntireSheet, readSheet, updateCellByRowValue } from '../tasks/gSheets';
@@ -11,26 +11,10 @@ export async function main(page: Page): Promise<void> {
   // clean up: remove any .pdf files
   await deletePdfs();
 
-  const spreadsheetId = 'YOUR_SPREADSHEET_ID';
+  const workqueueData = await getWorkqueueData();
+  console.log(workqueueData)
+  
 
-  // Read the sheet
-  const rows = await readEntireSheet(
-    spreadsheetId,
-    'Sheet1!A1:D10',
-  );
-
-  console.log('Google Sheets data:');
-  console.dir(rows, { depth: null });
-
-  // Test updating a cell
-  await updateCellByRowValue(
-    spreadsheetId,
-    'Sheet1',
-    'Invoice Number',
-    'INV-002',
-    'Status',
-    'Paid',
-  );
 
   console.log('Google Sheets update successful.');
 
@@ -38,16 +22,40 @@ export async function main(page: Page): Promise<void> {
   await login(page, config.baseUrl);
   await selectMenu(page, "Invoice");
 
-  // download invoice
-  const invoicePdfPath = await downloadInvoice(page, 'OM98996');
+  // for each workqueue item
+  for (const wqItem of workqueueData) {
+    let downloadedInvoices = [];
 
-  //send email
-  await sendEmail({
-    to: 'chloe.kim@bnbglobal.biz',
-    subject: 'Playwright Email Test',
-    text: 'This is a test email sent from my Playwright automation.',
-    attachments: [invoicePdfPath],
-  });
+    // push each downloaded invoice to attachment array
+    for (const invoiceNumber of wqItem["invoices"]) {
+      downloadedInvoices.push(await downloadInvoice(page, invoiceNumber))
+    }
+
+    await page.pause();
+
+    //send email
+    await sendEmail({
+      to: wqItem["emailTo"],
+      cc: wqItem["emailCC"],
+      subject: wqItem["emailSubject"],
+      text: wqItem["emailBody"],
+      attachments: downloadedInvoices,
+    });
+
+      // update status of corresponding invoices that were downloaded
+      // await updateCellByRowValue(
+      //   spreadsheetId,
+      //   'Sheet1',
+      //   'Invoice Number',
+      //   'INV-002',
+      //   'Status',
+      //   'Paid',
+      // );
+
+
+  }
+
+
   
   await page.pause();
 

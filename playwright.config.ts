@@ -3,17 +3,18 @@ import { config } from './src/config';
 
 export default defineConfig({
   timeout: 60 * 60 * 1_000,
-
   testDir: './projects',
 
   use: {
     browserName: 'chromium',
     headless: !!process.env.CI,
 
-    viewport: {
-      width: 1920,
-      height: 1080,
-    },
+    ...(process.env.CI && {
+      viewport: {
+        width: 1920,
+        height: 1080,
+      },
+    }),
 
     video: process.env.CI
       ? {

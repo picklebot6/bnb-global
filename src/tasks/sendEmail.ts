@@ -6,28 +6,33 @@ import { createTransport } from 'nodemailer';
 
 export interface EmailOptions {
   to: string | string[];
+  cc?: string | string[];
   subject: string;
   text: string;
   attachments?: string[];
 }
 
-/** Send an email with optional local file attachments. Returns the message ID. */
+/** Send an email with optional CC recipients and local file attachments. Returns the message ID. */
 export async function sendEmail({
   to,
+  cc,
   subject,
   text,
   attachments = [],
 }: EmailOptions): Promise<string> {
   const envPath = resolve(__dirname, '../../.env');
+
   if (!process.env.CI && existsSync(envPath)) {
     loadEnvFile(envPath);
   }
 
   function required(name: string): string {
     const value = process.env[name];
+
     if (!value) {
       throw new Error(`Set ${name} in your environment or .env file.`);
     }
+
     return value;
   }
 
@@ -50,9 +55,18 @@ export async function sendEmail({
     throw new Error('Provide at least one email recipient.');
   }
 
+  if (
+    cc &&
+    ((!Array.isArray(cc) && !cc.trim()) ||
+      (Array.isArray(cc) && cc.some(address => !address.trim())))
+  ) {
+    throw new Error('CC contains an empty email recipient.');
+  }
+
   const files = await Promise.all(
     attachments.map(async file => {
       const path = resolve(file);
+
       await access(path, constants.R_OK);
 
       return {
@@ -79,11 +93,16 @@ export async function sendEmail({
     socketTimeout: 60_000,
   });
 
-  console.log(`Sending email with ${files.length} attachment(s)`);
+  console.log(
+    `Sending email to ${Array.isArray(to) ? to.length : 1} recipient(s), ` +
+    `${cc ? (Array.isArray(cc) ? cc.length : 1) : 0} CC recipient(s), ` +
+    `with ${files.length} attachment(s)`,
+  );
 
   const result = await transport.sendMail({
     from: user,
     to,
+    cc,
     subject,
     text,
     attachments: files,

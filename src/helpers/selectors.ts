@@ -17,11 +17,12 @@ export const invoiceSelectors = {
   selectInvoiceDate: "//b[contains(text(),'Invoice Date')]/ancestor::td/following-sibling::td//input",
   yesterdayOption: "//span[text()='Yesterday']",
   searchCompanyName: "//div[text()='Company']/following-sibling::div//input",
-  invoiceNum: (invNumber: string) => `//u[text()='${invNumber}']`,
+  invoiceNum: (invNumber: string) => `//u[contains(text(),'${invNumber}')]`,
   printDropdown: "(//button[text()='Print Invoice'])[2]",
   printInvoice: "//a/span[text()='Print Invoice']",
   printButton: "//button[text()='Print']",
   invSearch: "//div[text()='INV #']/following-sibling::div//input",
+  closeInvoice: "(//button[text()='Close'])[1]"
 } as const
 
 export const salesSelectors = {

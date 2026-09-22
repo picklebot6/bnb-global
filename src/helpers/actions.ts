@@ -11,7 +11,10 @@ export async function wait(page: Page, name: string, xpath: string) {
     console.log(`Waiting for ${name} to be visible`);
     await element.waitFor({
       state: 'visible',
-      timeout: config.elementWaitTimeoutMs,
+      timeout:
+        name === 'Yes'
+          ? config.yesElementNotExistTimeoutMs
+          : config.elementNotExistTimeoutMs,
     });
   });
   await page.waitForTimeout(config.preActionDelayMs);

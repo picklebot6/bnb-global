@@ -23,7 +23,13 @@ export async function processSalesOrder(page: Page): Promise<void> {
   await waitForLoad(page)
   // save
   await click(page,'Save',salesSelectors.saveButton);
+  try {
+    await click(page,'Yes',salesSelectors.yesButton);
+  } catch {
+    console.log("No A/R alert")
+  }
   await waitForLoad(page)
+  await page.pause();
   // Pick Request
   await click(page,'Pick Request',salesSelectors.pickRequestButton);
   await click(page,'Yes',salesSelectors.yesButton);

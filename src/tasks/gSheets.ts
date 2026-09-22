@@ -256,13 +256,28 @@ function columnIndexToLetter(index: number): string {
 export async function readEntireSheet(
   spreadsheetId: string,
   sheetName: string,
-): Promise<string[][]> {
+): Promise<Record<string, string>[]> {
   const sheets = getSheetsClient();
 
   const result = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: sheetName,
+    range: `'${sheetName.replaceAll("'", "''")}'`,
   });
 
-  return (result.data.values ?? []) as string[][];
+  const rows = (result.data.values ?? []) as string[][];
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const headers = rows[0];
+
+  return rows.slice(1).map(row =>
+    Object.fromEntries(
+      headers.map((header, index) => [
+        header,
+        row[index] ?? '',
+      ]),
+    ),
+  );
 }

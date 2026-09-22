@@ -3,6 +3,19 @@ import { resolve } from 'node:path';
 import type { Page } from '@playwright/test';
 import { click, write, wait } from '../helpers/actions';
 import { homeSelectors, invoiceSelectors } from '../helpers/selectors';
+import { config } from '../config';
+import { readEntireSheet } from './gSheets';
+
+
+interface WorkqueueItem {
+  customerName: string;
+  emailTo: string[];
+  emailCC: string[];
+  emailSubject: string;
+  emailBody: string;
+  invoices: string[];
+}
+
 
 export async function goToInvoice(page: Page): Promise<void> {
   await click(page, 'Invoice Dropdown', homeSelectors.invoiceDropdown);
@@ -76,5 +89,84 @@ export async function downloadInvoice(page: Page, invNumber: string): Promise<st
   }
 
   console.log(`Invoice PDF saved to ${pdfPath}`);
+
+  // close invoice
+  await click(page,'Close Invoice', invoiceSelectors.closeInvoice)
   return pdfPath;
+}
+
+export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
+  const spreadsheetId = config.invoicesSheet;
+
+  const toDoList = await readEntireSheet(
+    spreadsheetId,
+    config.invoicesSheetToDoTab,
+  );
+
+  const customerMapping = await readEntireSheet(
+    spreadsheetId,
+    config.invoicesSheetCustomerMappingTab,
+  );
+
+  const emailFormat = await readEntireSheet(
+    spreadsheetId,
+    config.invoicesSheetEmailTab,
+  );
+
+  const emailTemplate = emailFormat[0];
+
+  const workqueueMap = new Map<string, WorkqueueItem>();
+
+  for (const item of toDoList) {
+    if (item.Status !== 'Pending') {
+      continue;
+    }
+
+    const customerName = item.Customer;
+    const invoiceNumber = item['Invoice Number'];
+
+    if (!customerName || !invoiceNumber) {
+      continue;
+    }
+
+    let workqueueItem = workqueueMap.get(customerName);
+
+    if (!workqueueItem) {
+      const customer = customerMapping.find(
+        mapping => mapping['Customer Name'] === customerName,
+      );
+
+      if (!customer) {
+        throw new Error(
+          `No customer mapping found for "${customerName}".`,
+        );
+      }
+
+      workqueueItem = {
+        customerName,
+        emailTo: customer['Email To']
+          .split(',')
+          .map(email => email.trim())
+          .filter(Boolean),
+        emailCC: customer['Email CC']
+          ? customer['Email CC']
+              .split(',')
+              .map(email => email.trim())
+              .filter(Boolean)
+          : [],
+        emailSubject: emailTemplate.Subject.replace(
+          '{customerName}',
+          customerName,
+        ),
+        emailBody: emailTemplate.Body,
+        invoices: [],
+      };
+
+      workqueueMap.set(customerName, workqueueItem);
+    }
+
+    workqueueItem.invoices.push(invoiceNumber);
+  }
+
+  return Array.from(workqueueMap.values());
 }
