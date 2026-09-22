@@ -58,6 +58,12 @@ export async function refreshList(page: Page): Promise<void> {
   await wait(page,'Status Dropdown', salesSelectors.statusDropdown);
 }
 
+export async function filterToUser(page: Page, user: string): Promise<void> {
+  await write(page, 'Entered by (User)', salesSelectors.enteredByUser, user);
+    await page.keyboard.press('Enter');
+    await waitForLoad(page);
+}
+
 export async function salesOrderExists(page: Page): Promise<Boolean> {
   const count = await page.locator(salesSelectors.firstSalesOrder).count()
   if (count > 0) {

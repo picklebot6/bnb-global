@@ -11,10 +11,6 @@ const workflows = {
   },
 };
 
-const disabledWorkflows = new Set([
-  'downloadInvoices',
-]);
-
 const $ = (id) => document.getElementById(id);
 
 function setStatus(element, text, state = '') {
@@ -40,7 +36,9 @@ async function request(path, options = {}) {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(body.error || `Request failed (${response.status})`);
+    throw new Error(
+      body.error || `Request failed (${response.status})`,
+    );
   }
 
   return body;
@@ -48,6 +46,7 @@ async function request(path, options = {}) {
 
 async function checkSession() {
   const result = await request('/api/session');
+
   showView(result.authenticated);
 
   if (result.authenticated) {
@@ -61,44 +60,68 @@ function showView(authenticated) {
 }
 
 async function runWorkflow(id) {
-  if (disabledWorkflows.has(id)) {
-    return;
-  }
-
   const button = $(workflows[id].buttonId);
   const status = $(workflows[id].statusId);
 
   button.disabled = true;
-  setStatus(status, 'Starting workflow...', 'running');
+
+  setStatus(
+    status,
+    'Starting workflow...',
+    'running',
+  );
 
   try {
-    await request(`/api/workflows/${id}/dispatch`, {
-      method: 'POST',
-      body: '{}',
-    });
+    await request(
+      `/api/workflows/${id}/dispatch`,
+      {
+        method: 'POST',
+        body: '{}',
+      },
+    );
 
-    setStatus(status, 'Workflow queued successfully.', 'success');
+    setStatus(
+      status,
+      'Workflow queued successfully.',
+      'success',
+    );
 
     setTimeout(refreshAll, 1500);
   } catch (error) {
-    setStatus(status, error.message, 'failure');
+    setStatus(
+      status,
+      error.message,
+      'failure',
+    );
   } finally {
     button.disabled = false;
   }
 }
 
 async function loadRuns(id) {
-  const result = await request(`/api/workflows/${id}/runs`);
-  return { id, runs: result.runs || [] };
+  const result = await request(
+    `/api/workflows/${id}/runs`,
+  );
+
+  return {
+    id,
+    runs: result.runs || [],
+  };
 }
 
 function renderRuns(results) {
-  const all = results.flatMap(({ id, runs }) =>
-    runs.map(run => ({ ...run, workflowId: id })),
+  const all = results.flatMap(
+    ({ id, runs }) =>
+      runs.map(run => ({
+        ...run,
+        workflowId: id,
+      })),
   );
 
   all.sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    (a, b) =>
+      new Date(b.createdAt) -
+      new Date(a.createdAt),
   );
 
   const recent = all.slice(0, 10);
@@ -106,12 +129,25 @@ function renderRuns(results) {
   if (!recent.length) {
     $('runs').innerHTML =
       '<div class="run-meta">No workflow runs found.</div>';
+
     return;
   }
 
   $('runs').innerHTML = recent
     .map(run => {
-      const label = workflows[run.workflowId].label;
+      const label =
+        workflows[run.workflowId].label;
+
+      const state =
+        run.conclusion === 'success'
+          ? 'success'
+          : (
+              run.conclusion === 'failure' ||
+              run.conclusion === 'cancelled'
+            )
+            ? 'failure'
+            : 'running';
+
       const status =
         run.status === 'completed'
           ? run.conclusion || 'completed'
@@ -120,22 +156,44 @@ function renderRuns(results) {
       return `
         <div class="run-row">
           <div>
-            <div class="run-name">${label}</div>
+            <div class="run-name">
+              ${label}
+            </div>
             <div class="run-meta">
-              Run #${run.runNumber} · ${status} · ${formatTime(run.createdAt)}
+              Run #${run.runNumber} ·
+              ${status} ·
+              ${formatTime(run.createdAt)}
             </div>
           </div>
-          <a href="${run.url}" target="_blank" rel="noreferrer">View</a>
-        </div>`;
+
+          <a
+            href="${run.url}"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View
+          </a>
+        </div>
+      `;
     })
     .join('');
 
   for (const id of Object.keys(workflows)) {
-    const matching = results.find(item => item.id === id)?.runs?.[0];
-    const statusElement = $(workflows[id].statusId);
+    const matching =
+      results.find(
+        item => item.id === id,
+      )?.runs?.[0];
+
+    const statusElement =
+      $(workflows[id].statusId);
 
     if (!matching) {
-      setStatus(statusElement, 'No recent runs.', '');
+      setStatus(
+        statusElement,
+        'No recent runs.',
+        '',
+      );
+
       continue;
     }
 
@@ -145,7 +203,9 @@ function renderRuns(results) {
         `${matching.status} · Run #${matching.runNumber}`,
         'running',
       );
-    } else if (matching.conclusion === 'success') {
+    } else if (
+      matching.conclusion === 'success'
+    ) {
       setStatus(
         statusElement,
         `Completed · Run #${matching.runNumber}`,
@@ -163,6 +223,7 @@ function renderRuns(results) {
 
 async function refreshAll() {
   const refresh = $('refreshButton');
+
   refresh.disabled = true;
 
   try {
@@ -181,45 +242,58 @@ async function refreshAll() {
       `<div class="run-meta">${error.message}</div>`;
   } finally {
     refresh.disabled = false;
-
-    // Keep intentionally disabled workflows disabled.
-    for (const id of disabledWorkflows) {
-      $(workflows[id].buttonId).disabled = true;
-    }
   }
 }
 
-$('loginForm').addEventListener('submit', async event => {
-  event.preventDefault();
+$('loginForm').addEventListener(
+  'submit',
+  async (event) => {
+    event.preventDefault();
 
-  $('loginError').textContent = '';
+    $('loginError').textContent = '';
 
-  const password = $('password').value;
+    const password =
+      $('password').value;
 
-  try {
-    await request('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({ password }),
-    });
+    try {
+      await request('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          password,
+        }),
+      });
 
-    $('password').value = '';
-    showView(true);
-    await refreshAll();
-  } catch (error) {
-    $('loginError').textContent = error.message;
-  }
-});
+      $('password').value = '';
 
-$('logoutButton').addEventListener('click', async () => {
-  await request('/api/logout', {
-    method: 'POST',
-    body: '{}',
-  }).catch(() => {});
+      showView(true);
 
-  showView(false);
-});
+      await refreshAll();
+    } catch (error) {
+      $('loginError').textContent =
+        error.message;
+    }
+  },
+);
 
-$('refreshButton').addEventListener('click', refreshAll);
+$('logoutButton').addEventListener(
+  'click',
+  async () => {
+    await request(
+      '/api/logout',
+      {
+        method: 'POST',
+        body: '{}',
+      },
+    ).catch(() => {});
+
+    showView(false);
+  },
+);
+
+$('refreshButton').addEventListener(
+  'click',
+  refreshAll,
+);
 
 $('downloadInvoices').addEventListener(
   'click',
@@ -231,8 +305,12 @@ $('processSalesOrders').addEventListener(
   () => runWorkflow('processSalesOrders'),
 );
 
-checkSession().catch(() => showView(false));
+checkSession().catch(() =>
+  showView(false),
+);
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker
+    .register('/sw.js')
+    .catch(() => {});
 }

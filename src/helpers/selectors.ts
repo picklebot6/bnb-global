@@ -30,6 +30,7 @@ export const salesSelectors = {
   loading: "//div[contains(text(),'Loading') and not(@id)]",
   statusDropdown: "//b[contains(text(),'Status')]/ancestor::td/following-sibling::td//input[not(@value)]",
   statusOpenOption: "//div[contains(@class,'list-item') and text()='Open']",
+  enteredByUser: "//div[text()='Entered By']/following-sibling::div//input",
   firstSalesOrder: "(//div[text()='SO #']/ancestor::div[contains(@class,'header')]/following-sibling::div[contains(@class,'scroller')]//div[contains(@class,'col-0')]/u)[1]",
   saveButton: "//button[text()='Save']",
   saveButtonPickList: "(//button[text()='Save'])[2]",
