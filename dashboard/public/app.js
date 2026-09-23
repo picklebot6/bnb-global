@@ -47,10 +47,15 @@ async function request(path, options = {}) {
 async function checkSession() {
   const result = await request('/api/session');
 
+  const run = new URLSearchParams(location.search).get('run');
   showView(result.authenticated);
 
   if (result.authenticated) {
-    await refreshAll();
+    if (run) {
+      await showRunLogs(run);
+    } else {
+      await refreshAll();
+    }
   }
 }
 
@@ -58,6 +63,7 @@ function showView(authenticated) {
   $('loginView').classList.toggle('hidden', authenticated);
   $('appView').classList.toggle('hidden', !authenticated);
   $('psoView').classList.add('hidden');
+  $('runView').classList.add('hidden');
 }
 
 function showPsoView() {
@@ -68,7 +74,37 @@ function showPsoView() {
 
 function showAppView() {
   $('psoView').classList.add('hidden');
+  $('runView').classList.add('hidden');
   $('appView').classList.remove('hidden');
+}
+
+async function showRunLogs(runId) {
+  const params = new URLSearchParams(location.search);
+  const workflowId = params.get('workflow');
+  const workflow = workflows[workflowId];
+
+  if (!workflow) {
+    history.replaceState({}, '', '/');
+    showAppView();
+    await refreshAll();
+    return;
+  }
+
+  $('appView').classList.add('hidden');
+  $('psoView').classList.add('hidden');
+  $('runView').classList.remove('hidden');
+  $('runTitle').textContent = `${workflow.label} · Run #${runId}`;
+  $('runLogs').classList.add('hidden');
+  setStatus($('runLogStatus'), 'Loading logs...', 'running');
+
+  try {
+    const result = await request(`/api/workflows/${workflowId}/runs/${runId}/logs`);
+    $('runLogs').textContent = result.logs;
+    $('runLogs').classList.remove('hidden');
+    setStatus($('runLogStatus'), 'Logs loaded.', 'success');
+  } catch (error) {
+    setStatus($('runLogStatus'), error.message, 'failure');
+  }
 }
 
 async function runWorkflow(id, inputs = {}) {
@@ -168,11 +204,7 @@ function renderRuns(results) {
             </div>
           </div>
 
-          <a
-            href="${run.url}"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href="/?workflow=${encodeURIComponent(run.workflowId)}&run=${encodeURIComponent(run.id)}">
             View
           </a>
         </div>
@@ -268,8 +300,13 @@ $('loginForm').addEventListener(
       $('password').value = '';
 
       showView(true);
+      const run = new URLSearchParams(location.search).get('run');
 
-      await refreshAll();
+      if (run) {
+        await showRunLogs(run);
+      } else {
+        await refreshAll();
+      }
     } catch (error) {
       $('loginError').textContent =
         error.message;
@@ -296,6 +333,12 @@ $('refreshButton').addEventListener(
   'click',
   refreshAll,
 );
+
+$('runBack').addEventListener('click', async () => {
+  history.replaceState({}, '', '/');
+  showAppView();
+  await refreshAll();
+});
 
 $('downloadInvoices').addEventListener(
   'click',

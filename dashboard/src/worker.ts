@@ -8,6 +8,8 @@ type Env = {
 type WorkflowConfig = {
   file: string;
   label: string;
+  logStep: string;
+  logMarker: string;
 };
 
 const OWNER = 'picklebot6';
@@ -18,10 +20,14 @@ const WORKFLOWS: Record<string, WorkflowConfig> = {
   downloadInvoices: {
     file: 'downloadInvoices.yml',
     label: 'Download Invoices',
+    logStep: 'Run invoice workflow',
+    logMarker: 'npm run di',
   },
   processSalesOrders: {
     file: 'processSalesOrders.yml',
     label: 'Process Sales Orders',
+    logStep: 'Run sales order workflow',
+    logMarker: 'npm run pso',
   },
 };
 
@@ -299,6 +305,164 @@ async function getLatestRuns(
   });
 }
 
+function findEndOfCentralDirectory(bytes: Uint8Array): number {
+  // The ZIP end record is within the last 64 KiB of the archive.
+  for (let offset = bytes.length - 22; offset >= Math.max(0, bytes.length - 65_557); offset--) {
+    if (
+      bytes[offset] === 0x50 &&
+      bytes[offset + 1] === 0x4b &&
+      bytes[offset + 2] === 0x05 &&
+      bytes[offset + 3] === 0x06
+    ) {
+      return offset;
+    }
+  }
+
+  throw new Error('GitHub returned an invalid log archive.');
+}
+
+function cleanLogLine(line: string): string {
+  return line
+    .replace(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+Z /, '')
+    .replace(/\x1b\[[0-9;]*m/g, '');
+}
+
+export function extractAutomationStep(
+  log: string,
+  command: string,
+): string | null {
+  const lines = log.split(/\r?\n/).map(cleanLogLine);
+
+  for (let start = 0; start < lines.length; start++) {
+    if (!lines[start].startsWith('##[group]Run ')) {
+      continue;
+    }
+
+    const headerEnd = lines.indexOf('##[endgroup]', start + 1);
+    if (headerEnd < 0) {
+      continue;
+    }
+
+    const header = lines.slice(start, headerEnd);
+    if (!header.some(line => line.trim() === command)) {
+      continue;
+    }
+
+    let end = headerEnd + 1;
+    while (end < lines.length && !lines[end].startsWith('##[group]Run ')) {
+      end++;
+    }
+
+    const output = lines.slice(headerEnd + 1, end).join('\n').trim();
+    return output || null;
+  }
+
+  return null;
+}
+
+async function extractZipText(
+  archive: ArrayBuffer,
+  logStep: string,
+  logMarker: string,
+): Promise<string> {
+  const bytes = new Uint8Array(archive);
+  const view = new DataView(archive);
+  const end = findEndOfCentralDirectory(bytes);
+  const entries = view.getUint16(end + 10, true);
+  let offset = view.getUint32(end + 16, true);
+  const decoder = new TextDecoder();
+  let stepOutput: string | null = null;
+
+  for (let index = 0; index < entries; index++) {
+    if (view.getUint32(offset, true) !== 0x02014b50) {
+      throw new Error('GitHub returned an invalid log archive.');
+    }
+
+    const compression = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const fileNameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localOffset = view.getUint32(offset + 42, true);
+    const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + fileNameLength));
+    const localNameLength = view.getUint16(localOffset + 26, true);
+    const localExtraLength = view.getUint16(localOffset + 28, true);
+    const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+    const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+
+    if (!name.endsWith('/') && !stepOutput) {
+      let contents: Uint8Array;
+
+      if (compression === 0) {
+        contents = compressed;
+      } else if (compression === 8) {
+        const stream = new Blob([compressed]).stream().pipeThrough(
+          new DecompressionStream('deflate-raw'),
+        );
+        contents = new Uint8Array(await new Response(stream).arrayBuffer());
+      } else {
+        throw new Error(`Unsupported compression in ${name}.`);
+      }
+
+      stepOutput = extractAutomationStep(decoder.decode(contents), logMarker);
+    }
+
+    offset += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  if (!stepOutput) {
+    throw new Error(`The ${logStep} log is not available for this run.`);
+  }
+
+  return stepOutput;
+}
+
+async function getRunLogs(
+  runId: string,
+  logStep: string,
+  logMarker: string,
+  env: Env,
+): Promise<Response> {
+  const apiUrl =
+    `https://api.github.com/repos/${OWNER}/${REPO}` +
+    `/actions/runs/${encodeURIComponent(runId)}/logs`;
+  const archiveResponse = await fetch(apiUrl, {
+    headers: githubHeaders(env.GITHUB_TOKEN),
+    redirect: 'manual',
+  });
+
+  if (archiveResponse.status < 300 || archiveResponse.status >= 400) {
+    const body = await archiveResponse.text();
+    return json({ ok: false, error: body || `GitHub returned ${archiveResponse.status}` }, archiveResponse.status);
+  }
+
+  const downloadUrl = archiveResponse.headers.get('Location');
+  if (!downloadUrl) {
+    return json({ ok: false, error: 'GitHub did not provide a log download URL.' }, 502);
+  }
+
+  const downloadResponse = await fetch(downloadUrl);
+  if (!downloadResponse.ok) {
+    return json({ ok: false, error: `Could not download logs (${downloadResponse.status}).` }, 502);
+  }
+
+  try {
+    return json({
+      ok: true,
+      logs: await extractZipText(
+        await downloadResponse.arrayBuffer(),
+        logStep,
+        logMarker,
+      ),
+    });
+  } catch (error) {
+    return json({
+      ok: false,
+      error: error instanceof Error ? error.message : 'Could not read the log archive.',
+    }, 502);
+  }
+}
+
 export default {
   async fetch(
     request: Request,
@@ -542,6 +706,28 @@ export default {
 
       return getLatestRuns(
         workflow.file,
+        env,
+      );
+    }
+
+    const logsMatch =
+      url.pathname.match(
+        /^\/api\/workflows\/([^/]+)\/runs\/(\d+)\/logs$/,
+      );
+
+    if (logsMatch && request.method === 'GET') {
+      if (!(await isAuthenticated(request, env.SESSION_SECRET))) {
+        return json({ ok: false, error: 'Unauthorized' }, 401);
+      }
+
+      if (!WORKFLOWS[logsMatch[1]]) {
+        return json({ ok: false, error: 'Unknown workflow.' }, 404);
+      }
+
+      return getRunLogs(
+        logsMatch[2],
+        WORKFLOWS[logsMatch[1]].logStep,
+        WORKFLOWS[logsMatch[1]].logMarker,
         env,
       );
     }

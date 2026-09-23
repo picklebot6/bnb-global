@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { click, write, wait } from '../helpers/actions';
-import { salesSelectors, invoiceSelectors, homeSelectors } from '../helpers/selectors';
+import { salesSelectors, invoiceSelectors, homeSelectors, customerSelectors } from '../helpers/selectors';
 import { waitForLoad } from '../helpers/actions';
 
 export async function selectMenu(page: Page, menu: string): Promise<void> {
@@ -16,6 +16,11 @@ export async function selectMenu(page: Page, menu: string): Promise<void> {
     await click(page, 'Sales List Option', homeSelectors.salesOption);
     await page.waitForTimeout(5000);
     await wait(page,'Status Dropdown', salesSelectors.statusDropdown);
+  } else if (menu == "Customer") {
+    await click(page, 'Customer Dropdown', homeSelectors.customerDropdown);
+    await click(page, 'Customer List Option', homeSelectors.customerOption);
+    await page.waitForTimeout(5000);
+    await wait(page,'First Customer', customerSelectors.customerName(1));
   }
 }
 

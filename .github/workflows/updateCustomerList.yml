@@ -1,0 +1,91 @@
+name: Run BNB Workflow - Update Customer List
+run-name: Update Customer List
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bnb-update-customer-list
+  cancel-in-progress: false
+
+jobs:
+  update-customer-list:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    env:
+      CI: 'true'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Run customer-list workflow
+        env:
+          BNB_BASE_URL: ${{ secrets.BNB_BASE_URL }}
+          BNB_USERNAME: ${{ secrets.BNB_USERNAME }}
+          BNB_PASSWORD: ${{ secrets.BNB_PASSWORD }}
+          G_AUTH_CLIENT_ID: ${{ secrets.G_AUTH_CLIENT_ID }}
+          G_AUTH_CLIENT_SECRET: ${{ secrets.G_AUTH_CLIENT_SECRET }}
+          G_AUTH_REFRESH_TOKEN: ${{ secrets.G_AUTH_REFRESH_TOKEN }}
+        run: |
+          for name in BNB_BASE_URL BNB_USERNAME BNB_PASSWORD G_AUTH_CLIENT_ID G_AUTH_CLIENT_SECRET G_AUTH_REFRESH_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+
+          npm run ucl
+
+      - name: Convert recordings to MP4
+        if: always()
+        shell: bash
+        run: |
+          shopt -s globstar nullglob
+          videos=(test-results/**/*.webm)
+
+          if [ "${#videos[@]}" -eq 0 ]; then
+            echo "No recordings were produced."
+            exit 0
+          fi
+
+          for video in "${videos[@]}"; do
+            ffmpeg -hide_banner -loglevel error -y \
+              -i "$video" \
+              -c:v libx264 \
+              -preset fast \
+              -crf 18 \
+              -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+              -pix_fmt yuv420p \
+              -an \
+              -movflags +faststart \
+              "${video%.webm}.mp4"
+          done
+
+      - name: Upload MP4 workflow videos
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: update-customer-list-videos-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/**/*.mp4
+          if-no-files-found: warn
+          retention-days: 7

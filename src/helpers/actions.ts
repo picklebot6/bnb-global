@@ -5,12 +5,17 @@ import { resolve } from 'node:path';
 import { salesSelectors } from '../helpers/selectors';
 
 
-export async function wait(page: Page, name: string, xpath: string) {
+export async function wait(
+  page: Page,
+  name: string,
+  xpath: string,
+  state: 'visible' | 'attached' = 'visible',
+) {
   const element = page.locator(`xpath=${xpath}`);
   await test.step(`Wait for: ${name}`, async () => {
-    console.log(`Waiting for ${name} to be visible`);
+    console.log(`Waiting for ${name} to be ${state}`);
     await element.waitFor({
-      state: 'visible',
+      state,
       timeout:
         name === 'Yes'
           ? config.yesElementNotExistTimeoutMs
@@ -73,18 +78,28 @@ export async function click(
   });
 }
 
-/** Read an element's rendered text. For form field values, use inputValue(). */
+export type ReadElement = 'text' | 'value';
+
+/** Read either an element's rendered text or its form value. */
 export async function read(
   page: Page,
   name: string,
   xpath: string,
+  readElement: ReadElement,
 ): Promise<string> {
   return test.step(`Read: ${name}`, async () => {
-    const element = await wait(page, name, xpath);
-    console.log(`Reading ${name}`);
-    const text = await element.innerText();
+    const element = await wait(
+      page,
+      name,
+      xpath,
+      readElement === 'value' ? 'attached' : 'visible',
+    );
+    console.log(`Reading ${readElement} from ${name}`);
+    const value = readElement === 'value'
+      ? await element.inputValue()
+      : await element.innerText();
     await page.waitForTimeout(config.actionDelayMs);
-    return text;
+    return value;
   });
 }
 

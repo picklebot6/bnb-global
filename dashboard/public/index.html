@@ -387,6 +387,24 @@
 
     </section>
 
+    <!-- Individual workflow run log -->
+    <section id="runView" class="hidden">
+      <header>
+        <div>
+          <h1 id="runTitle">Workflow Run</h1>
+          <p class="subtitle">Automation output</p>
+        </div>
+        <button id="runBack" class="button secondary" type="button">Back</button>
+      </header>
+
+      <section class="card">
+        <div id="runLogStatus" class="status">
+          <span class="dot running"></span><span>Loading logs...</span>
+        </div>
+        <pre id="runLogs" class="hidden" style="margin:16px 0 0; padding:16px; overflow:auto; max-height:70vh; background:#111827; color:#f9fafb; border-radius:12px; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap"></pre>
+      </section>
+    </section>
+
     <!-- Process Sales Orders user selection -->
     <section id="psoView" class="hidden">
 

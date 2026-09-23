@@ -13,7 +13,7 @@ if (!baseUrl) {
 }
 
 export const config = {
-  elementWaitTimeoutMs: 15_000,
+  elementWaitTimeoutMs: 5_000,
   yesElementNotExistTimeoutMs: 2500,
   elementNotExistTimeoutMs: 60_000,
   preActionDelayMs: 500,
@@ -22,6 +22,6 @@ export const config = {
   baseUrl,
   invoicesSheet: "1gAlqu4ZREO_Jdw72CK85-yFUq5CbzCM-7MR9_fUqnYk",
   invoicesSheetCustomerMappingTab: "Customer Mapping",
-  invoicesSheetToDoTab: "Invoices To Do",
+  invoicesSheetToDoTab: "Invoices 2026",
   invoicesSheetEmailTab: "Email",
 };

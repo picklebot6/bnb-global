@@ -1,64 +1,87 @@
 import type { Page } from '@playwright/test';
 import { login } from '../tasks/login';
-import { downloadInvoice, goToInvoice } from '../tasks/downloadInvoice';
-import { sendEmail } from '../tasks/sendEmail';
 import { config } from '../config';
-import { appendToSheet, readEntireSheet, readSheet, updateCellByRowValue } from '../tasks/gSheets';
-import { deletePdfs } from '../helpers/actions';
+import { appendToSheet, readEntireSheet, updateRowByValue } from '../tasks/gSheets';
+import { selectMenu } from '../tasks/general';
+import { click } from '../helpers/actions';
+import { customerSelectors } from '../helpers/selectors';
+import {
+  customerExists,
+  findCustomerMapping,
+  getCustomerName,
+  type CustomerMapping,
+  updateCustomerMapping,
+} from '../tasks/updateCustomerList';
+
 
 export async function main(page: Page): Promise<void> {
   const spreadsheetId = config.invoicesSheet;
   const customerMappingTab = config.invoicesSheetCustomerMappingTab
 
   // Read the sheet
-  const customerMapping = await readEntireSheet(
+  const customerMapping: Array<Partial<CustomerMapping>> = await readEntireSheet(
     spreadsheetId,
     customerMappingTab,
   );
 
-  console.log('Google Sheets data:');
-  console.dir(customerMapping, { depth: null });
+  // login and navigate to customer list
+  await login(page, config.baseUrl);
+  await selectMenu(page, "Customer");
 
-  await appendToSheet(
-    spreadsheetId,
-    customerMappingTab,
-    [
-      [
-        'CUSTOMER A',
-        '111111',
-        'CA',
-        'a@example.com',
-        '',
-        'Invoice A',
-        'Body A',
-      ],
-      [
-        'CUSTOMER B',
-        '222222',
-        'TX',
-        'b@example.com',
-        'cc@example.com',
-        'Invoice B',
-        'Body B',
-      ],
-    ],
-  );
-  console.log("appended to sheet")
+  // starting from index 1
+  let idx = 1
 
-  // // Test updating a cell
-  // await updateCellByRowValue(
-  //   spreadsheetId,
-  //   'Sheet1',
-  //   'Invoice Number',
-  //   'INV-002',
-  //   'Status',
-  //   'Paid',
-  // );
+  async function advanceCustomerIndex(): Promise<void> {
+    if (idx === 100) {
+      idx = 1;
+      await click(page, 'Next Customer Page', customerSelectors.nextPage);
+      return;
+    }
 
-  // console.log('Google Sheets update successful.');
+    idx += 1;
+  }
 
+  while (await customerExists(page, idx)) {
+    // if customer exists at this idx, get name
+    const customerName = await getCustomerName(page, idx);
+    const existingCustomer = findCustomerMapping(customerName, customerMapping);
+    const isNewCustomer = existingCustomer === undefined;
+    const needsUpdated = existingCustomer?.['Needs Update?']?.trim().toUpperCase() === 'TRUE';
 
-  
-  await page.pause();
+    if (existingCustomer && !needsUpdated) {
+      console.log(`Skipping ${customerName}: Needs Update? is FALSE`);
+      await advanceCustomerIndex();
+      continue;
+    }
 
+    const updatedCustomerMapping = await updateCustomerMapping(
+      page,
+      idx,
+      customerName,
+      customerMapping,
+    );
+    if (isNewCustomer) {
+      await appendToSheet(
+        spreadsheetId,
+        customerMappingTab,
+        updatedCustomerMapping,
+      );
+      customerMapping.push(updatedCustomerMapping);
+      console.log(`Added new customer mapping: ${customerName}`);
+    } else if (needsUpdated) {
+      await updateRowByValue(
+        spreadsheetId,
+        customerMappingTab,
+        'Customer Name',
+        customerName,
+        updatedCustomerMapping,
+      );
+
+      const existingCustomerIndex = customerMapping.indexOf(existingCustomer);
+      customerMapping[existingCustomerIndex] = updatedCustomerMapping;
+      console.log(`Overwrote existing customer mapping: ${customerName}`);
+    }
+
+    await advanceCustomerIndex();
+  }
 }

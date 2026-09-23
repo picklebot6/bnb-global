@@ -10,6 +10,8 @@ export const homeSelectors = {
   invoiceLabel: "//span[text()='Invoice']",
   salesDropdown: "//li[@id='mnu-sales']",
   salesOption: "//li[text()='SO List']",
+  customerDropdown: "//li[@id='mnu-customer']",
+  customerOption: "//li[text()='CUSTOMER List']",
   refresh: "(//button[contains(@class,'loading')])[1]",
 } as const
 
@@ -43,4 +45,11 @@ export const salesSelectors = {
 
 export const customerSelectors = {
   customerName: (idx: number) => `(//span[text()='A']/ancestor::td/following-sibling::td/div[contains(@class,'col-6')]/u)[${idx}]`,
+  state: "//input[@name='states']",
+  contactInfo: "//button[text()='Contact Info']",
+  email: "//div[contains(text(),'@') and contains(text(),'.com')]",
+  closeContact: "//div[contains(@class,'close')]",
+  closeForm: "//button[text()='Close']",
+  contactInfoNoData: "//div[contains(@class,'x-grid3')][.//div[contains(@class,'x-grid3-hd-inner') and starts-with(normalize-space(.), 'Email_Invoice')]]//div[contains(@class,'x-grid-empty') and normalize-space(.)='No Data']",
+  nextPage: "//div[contains(@class,'x-grid-panel')][.//div[contains(@class,'x-grid3-hd-inner') and starts-with(normalize-space(.), 'Cstm Name')]]//button[contains(@class,'page-next')]",
 } as const

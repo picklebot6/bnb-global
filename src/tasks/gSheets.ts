@@ -125,13 +125,119 @@ export async function writeSheet(
   });
 }
 
+export type SheetCellValue = string | number | boolean | null;
+export type SheetRow = Record<string, SheetCellValue | undefined>;
+
 /**
- * Append rows to the end of a sheet/range.
+ * Append one row using column names from the sheet's header row.
+ * Missing columns are appended as blank cells.
  */
 export async function appendToSheet(
   spreadsheetId: string,
+  sheetName: string,
+  row: SheetRow,
+): Promise<void> {
+  const sheets = getSheetsClient();
+  const escapedSheetName = sheetName.replaceAll("'", "''");
+  const headerRange = `'${escapedSheetName}'!1:1`;
+
+  const headerResult = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: headerRange,
+  });
+  const headers = (headerResult.data.values?.[0] ?? []).map(header =>
+    String(header ?? '').trim(),
+  );
+
+  if (headers.length === 0 || headers.every(header => !header)) {
+    throw new Error(`Sheet "${sheetName}" has no column headers in row 1.`);
+  }
+
+  const columnNames = Object.keys(row);
+  const unknownColumns = columnNames.filter(columnName =>
+    !headers.includes(columnName),
+  );
+
+  if (unknownColumns.length > 0) {
+    throw new Error(
+      `Column(s) not found in "${sheetName}": ${unknownColumns.join(', ')}.`,
+    );
+  }
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `'${escapedSheetName}'`,
+    valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: [headers.map(header => row[header] ?? '')],
+    },
+  });
+}
+
+/**
+ * Finds a row by a column value, then replaces that row using the supplied
+ * column-name mapping. Unspecified columns are written as blank cells.
+ */
+export async function updateRowByValue(
+  spreadsheetId: string,
+  sheetName: string,
+  searchColumnName: string,
+  searchValue: string,
+  row: SheetRow,
+): Promise<void> {
+  const sheets = getSheetsClient();
+  const escapedSheetName = sheetName.replaceAll("'", "''");
+  const result = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `'${escapedSheetName}'`,
+  });
+  const rows = result.data.values ?? [];
+
+  if (rows.length === 0) {
+    throw new Error(`Sheet "${sheetName}" is empty.`);
+  }
+
+  const headers = rows[0].map(header => String(header ?? '').trim());
+  const searchColumnIndex = headers.indexOf(searchColumnName);
+
+  if (searchColumnIndex === -1) {
+    throw new Error(`Column "${searchColumnName}" was not found in sheet "${sheetName}".`);
+  }
+
+  const unknownColumns = Object.keys(row).filter(columnName => !headers.includes(columnName));
+  if (unknownColumns.length > 0) {
+    throw new Error(
+      `Column(s) not found in "${sheetName}": ${unknownColumns.join(', ')}.`,
+    );
+  }
+
+  const dataRowIndex = rows.slice(1).findIndex(
+    currentRow => String(currentRow[searchColumnIndex] ?? '').trim() === searchValue.trim(),
+  );
+
+  if (dataRowIndex === -1) {
+    throw new Error(`Could not find "${searchValue}" in column "${searchColumnName}".`);
+  }
+
+  const sheetRow = dataRowIndex + 2;
+  const lastColumnLetter = columnIndexToLetter(headers.length - 1);
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `'${escapedSheetName}'!A${sheetRow}:${lastColumnLetter}${sheetRow}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [headers.map(header => row[header] ?? '')],
+    },
+  });
+}
+
+/** Append positional rows when no column-name mapping is available. */
+export async function appendRawRowsToSheet(
+  spreadsheetId: string,
   range: string,
-  values: (string | number | boolean | null)[][],
+  values: SheetCellValue[][],
 ): Promise<void> {
   const sheets = getSheetsClient();
 

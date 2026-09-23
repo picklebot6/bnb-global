@@ -3,7 +3,7 @@ import { login } from '../tasks/login';
 import { downloadInvoice, getWorkqueueData, goToInvoice } from '../tasks/downloadInvoice';
 import { sendEmail } from '../tasks/sendEmail';
 import { config } from '../config';
-import { readEntireSheet, readSheet, updateCellByRowValue } from '../tasks/gSheets';
+import { readEntireSheet, readSheet, updateCellByRowValue, appendToSheet } from '../tasks/gSheets';
 import { deletePdfs } from '../helpers/actions';
 import { selectMenu } from '../tasks/general';
 
@@ -13,7 +13,20 @@ export async function main(page: Page): Promise<void> {
 
   const workqueueData = await getWorkqueueData();
   console.log(workqueueData)
-  
+  //test adding a row
+  await appendToSheet(
+    config.invoicesSheet,
+    config.invoicesSheetCustomerMappingTab,
+    {
+      'Customer Name': 'customer test',
+      'Customer No': 'number test',
+      'State': 'CA',
+      'Email To': 'chloe.kim@bnbglobal.biz',
+      'Email CC': '',
+      'test': ''
+    },
+  );
+  await page.pause();
 
 
   console.log('Google Sheets update successful.');

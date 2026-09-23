@@ -22,7 +22,7 @@ export async function main(page: Page): Promise<void> {
 
   // for each user specified
   for (const user of users) {
-    if (user != "All") {
+    if (user !== "all") {
       await filterToUser(page,user);
     }
     while (await salesOrderExists(page)) {
