@@ -319,22 +319,23 @@ $('processSalesOrders').addEventListener(
   },
 );
 
-$('psoAll').addEventListener(
-  'change',
-  () => {
-    const allSelected = $('psoAll').checked;
+$('psoAll').addEventListener('change', () => {
+  const allSelected = $('psoAll').checked;
+  const userCheckboxes = document.querySelectorAll('.psoUser');
 
-    $('psoChloe').disabled = allSelected;
-    $('psoChloeOption').classList.toggle(
+  for (const checkbox of userCheckboxes) {
+    checkbox.disabled = allSelected;
+
+    if (allSelected) {
+      checkbox.checked = false;
+    }
+
+    checkbox.closest('.selection-option')?.classList.toggle(
       'disabled',
       allSelected,
     );
-
-    if (allSelected) {
-      $('psoChloe').checked = false;
-    }
-  },
-);
+  }
+});
 
 $('psoBack').addEventListener(
   'click',

@@ -14,18 +14,25 @@ export async function main(page: Page): Promise<void> {
 
   console.log('Selected users:', users);
   console.log(typeof users)
-  await page.pause();
 
   // login and navigate to invoice list
   await login(page, config.baseUrl);
   await selectMenu(page, "Sales");
   await setStatusToOpen(page);
-  await filterToUser(page,"chloe");
 
-  // while (await salesOrderExists(page)) {
-  //   await processSalesOrder(page);
-  //   // await page.pause();
-  //   await refresh(page);
-  // }
+  // for each user specified
+  for (const user of users) {
+    if (user != "All") {
+      await filterToUser(page,user);
+    }
+    while (await salesOrderExists(page)) {
+      await processSalesOrder(page);
+      // await page.pause();
+      await refresh(page);
+    }
+  }
+
+  await page.pause();
+
 
 }

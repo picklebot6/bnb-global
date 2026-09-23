@@ -29,7 +29,6 @@ export async function processSalesOrder(page: Page): Promise<void> {
     console.log("No A/R alert")
   }
   await waitForLoad(page)
-  await page.pause();
   // Pick Request
   await click(page,'Pick Request',salesSelectors.pickRequestButton);
   await click(page,'Yes',salesSelectors.yesButton);
@@ -59,7 +58,7 @@ export async function refreshList(page: Page): Promise<void> {
 }
 
 export async function filterToUser(page: Page, user: string): Promise<void> {
-  await write(page, 'Entered by (User)', salesSelectors.enteredByUser, user);
+  await write(page, `Entered by ${user}`, salesSelectors.enteredByUser, user);
     await page.keyboard.press('Enter');
     await waitForLoad(page);
 }
