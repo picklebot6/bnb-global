@@ -463,6 +463,61 @@ async function getRunLogs(
   }
 }
 
+/** Returns the current workflow, job, and step states while a run is active. */
+async function getRunStatus(
+  runId: string,
+  env: Env,
+): Promise<Response> {
+  const baseUrl = `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs/${encodeURIComponent(runId)}`;
+  const [runResponse, jobsResponse] = await Promise.all([
+    fetch(baseUrl, { headers: githubHeaders(env.GITHUB_TOKEN) }),
+    fetch(`${baseUrl}/jobs?per_page=100`, { headers: githubHeaders(env.GITHUB_TOKEN) }),
+  ]);
+
+  if (!runResponse.ok || !jobsResponse.ok) {
+    const failedResponse = !runResponse.ok ? runResponse : jobsResponse;
+    const body = await failedResponse.text();
+    return json({ ok: false, error: body || `GitHub returned ${failedResponse.status}` }, failedResponse.status);
+  }
+
+  const run = await runResponse.json() as {
+    status: string;
+    conclusion: string | null;
+    updated_at: string;
+  };
+  const jobs = await jobsResponse.json() as {
+    jobs?: Array<{
+      name: string;
+      status: string;
+      conclusion: string | null;
+      steps?: Array<{
+        name: string;
+        status: string;
+        conclusion: string | null;
+      }>;
+    }>;
+  };
+
+  return json({
+    ok: true,
+    run: {
+      status: run.status,
+      conclusion: run.conclusion,
+      updatedAt: run.updated_at,
+    },
+    jobs: (jobs.jobs ?? []).map(job => ({
+      name: job.name,
+      status: job.status,
+      conclusion: job.conclusion,
+      steps: (job.steps ?? []).map(step => ({
+        name: step.name,
+        status: step.status,
+        conclusion: step.conclusion,
+      })),
+    })),
+  });
+}
+
 export default {
   async fetch(
     request: Request,
@@ -730,6 +785,23 @@ export default {
         WORKFLOWS[logsMatch[1]].logMarker,
         env,
       );
+    }
+
+    const statusMatch =
+      url.pathname.match(
+        /^\/api\/workflows\/([^/]+)\/runs\/(\d+)\/status$/,
+      );
+
+    if (statusMatch && request.method === 'GET') {
+      if (!(await isAuthenticated(request, env.SESSION_SECRET))) {
+        return json({ ok: false, error: 'Unauthorized' }, 401);
+      }
+
+      if (!WORKFLOWS[statusMatch[1]]) {
+        return json({ ok: false, error: 'Unknown workflow.' }, 404);
+      }
+
+      return getRunStatus(statusMatch[2], env);
     }
 
     return env.ASSETS.fetch(request);

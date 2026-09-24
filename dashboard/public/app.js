@@ -12,6 +12,14 @@ const workflows = {
 };
 
 const $ = (id) => document.getElementById(id);
+let runStatusTimer;
+
+function stopRunStatusPolling() {
+  if (runStatusTimer) {
+    clearTimeout(runStatusTimer);
+    runStatusTimer = undefined;
+  }
+}
 
 function setStatus(element, text, state = '') {
   element.innerHTML = `<span class="dot ${state}"></span><span>${text}</span>`;
@@ -60,6 +68,7 @@ async function checkSession() {
 }
 
 function showView(authenticated) {
+  stopRunStatusPolling();
   $('loginView').classList.toggle('hidden', authenticated);
   $('appView').classList.toggle('hidden', !authenticated);
   $('psoView').classList.add('hidden');
@@ -73,12 +82,14 @@ function showPsoView() {
 }
 
 function showAppView() {
+  stopRunStatusPolling();
   $('psoView').classList.add('hidden');
   $('runView').classList.add('hidden');
   $('appView').classList.remove('hidden');
 }
 
 async function showRunLogs(runId) {
+  stopRunStatusPolling();
   const params = new URLSearchParams(location.search);
   const workflowId = params.get('workflow');
   const workflow = workflows[workflowId];
@@ -94,17 +105,45 @@ async function showRunLogs(runId) {
   $('psoView').classList.add('hidden');
   $('runView').classList.remove('hidden');
   $('runTitle').textContent = `${workflow.label} · Run #${runId}`;
-  $('runLogs').classList.add('hidden');
-  setStatus($('runLogStatus'), 'Loading logs...', 'running');
+  async function refreshRunStatus() {
+    try {
+      const result = await request(
+        `/api/workflows/${workflowId}/runs/${runId}/status`,
+      );
+      const runState = result.run.conclusion || result.run.status;
+      const jobLines = result.jobs.flatMap(job => [
+        `${job.name}: ${job.conclusion || job.status}`,
+        ...job.steps.map(step => `  ${step.name}: ${step.conclusion || step.status}`),
+      ]);
 
-  try {
-    const result = await request(`/api/workflows/${workflowId}/runs/${runId}/logs`);
-    $('runLogs').textContent = result.logs;
-    $('runLogs').classList.remove('hidden');
-    setStatus($('runLogStatus'), 'Logs loaded.', 'success');
-  } catch (error) {
-    setStatus($('runLogStatus'), error.message, 'failure');
+      $('runLogs').textContent = [
+        `Run status: ${runState}`,
+        '',
+        ...jobLines,
+      ].join('\n');
+      $('runLogs').classList.remove('hidden');
+
+      if (result.run.status !== 'completed') {
+        setStatus($('runLogStatus'), 'Run in progress. Refreshing every 5 seconds.', 'running');
+        runStatusTimer = setTimeout(refreshRunStatus, 5_000);
+        return;
+      }
+
+      try {
+        const logs = await request(`/api/workflows/${workflowId}/runs/${runId}/logs`);
+        $('runLogs').textContent = logs.logs;
+        setStatus($('runLogStatus'), 'Logs loaded.', 'success');
+      } catch {
+        setStatus($('runLogStatus'), 'Run completed. Logs are still being prepared.', 'running');
+        runStatusTimer = setTimeout(refreshRunStatus, 5_000);
+      }
+    } catch (error) {
+      setStatus($('runLogStatus'), error.message, 'failure');
+    }
   }
+
+  setStatus($('runLogStatus'), 'Loading run status...', 'running');
+  await refreshRunStatus();
 }
 
 async function runWorkflow(id, inputs = {}) {

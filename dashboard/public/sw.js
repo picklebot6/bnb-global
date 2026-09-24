@@ -1,4 +1,4 @@
-const CACHE = 'bnb-automation-v2.2.2';
+const CACHE = 'bnb-automation-v2.3';
 const APP_SHELL = [
   '/',
   '/index.html',
