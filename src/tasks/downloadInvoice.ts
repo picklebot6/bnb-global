@@ -19,6 +19,7 @@ export interface InvoiceWorkqueueItem {
 
 export interface WorkqueueItem {
   customerName: string;
+  hasEmptyCustomerMapping: boolean;
   emailTo: string[];
   emailCC: string[];
   emailSubject: string;
@@ -161,20 +162,15 @@ export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
         mapping => mapping['Customer Name'] === customerName,
       );
 
-      const recipientSource = customer?.['Email Test'] || item['Email To'];
-
-      if (!recipientSource?.trim()) {
-        throw new Error(
-          `No email recipient was found for "${customerName}".`,
-        );
-      }
+      const emailTo = customer?.['Email Test']
+        ?.split(',')
+        .map(email => email.trim())
+        .filter(Boolean) ?? [];
 
       workqueueItem = {
         customerName,
-        emailTo: recipientSource
-          .split(',')
-          .map(email => email.trim())
-          .filter(Boolean),
+        hasEmptyCustomerMapping: emailTo.length === 0,
+        emailTo,
         emailCC: customer?.['Email CC']
           ? customer['Email CC']
               .split(',')

@@ -41,6 +41,21 @@ export async function main(page: Page): Promise<void> {
 
   // for each workqueue item
   for (const wqItem of workqueueData) {
+    if (wqItem.hasEmptyCustomerMapping) {
+      for (const invoice of wqItem.invoices) {
+        await updateCellByRowValue(
+          config.invoicesSheet,
+          config.invoicesSheetToDoTab,
+          'Invoice Number',
+          invoice.invoiceNumber,
+          'Status',
+          'Error',
+        );
+        console.log(`Marked invoice ${invoice.invoiceNumber} as an error: Customer Mapping is empty`);
+      }
+      continue;
+    }
+
     const downloadedInvoices: string[] = [];
     const downloadedInvoiceItems: InvoiceWorkqueueItem[] = [];
 
