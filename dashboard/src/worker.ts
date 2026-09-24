@@ -225,6 +225,7 @@ async function dispatchWorkflow(
     body: JSON.stringify({
       ref: REF,
       inputs,
+      return_run_details: true,
     }),
   });
 
@@ -242,7 +243,8 @@ async function dispatchWorkflow(
     );
   }
 
-  return json({ ok: true });
+  const details = await response.json().catch(() => ({})) as { workflow_run_id?: number };
+  return json({ ok: true, runId: details.workflow_run_id ?? null });
 }
 
 async function getLatestRuns(

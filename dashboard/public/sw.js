@@ -1,10 +1,14 @@
-const CACHE = 'bnb-automation-v2.3';
+const CACHE = 'bnb-automation-v4.2';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/app.js',
   '/manifest.json',
   '/icons/icon.svg',
+  '/images/botlr.png',
+  '/images/botlr_face.png',
+  '/images/botlr_working.png',
+  '/images/botlr_app_logo.png',
 ];
 
 self.addEventListener('install', event => {

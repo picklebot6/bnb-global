@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#9ed8f5">
   <meta name="description" content="BNB Global automation dashboard">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
-  <title>BNB Automation</title>
+  <link rel="icon" href="/images/botlr_app_logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="/images/botlr_app_logo.png">
+  <meta name="apple-mobile-web-app-title" content="Botlr">
+  <title>BNB Automation Botlr</title>
 
   <style>
     :root {
@@ -21,8 +23,8 @@
 
     body {
       margin: 0;
-      background: #f3f4f6;
-      color: #111827;
+      background: #f2f7fa;
+      color: #1b2430;
       min-height: 100vh;
     }
 
@@ -48,13 +50,14 @@
 
     .subtitle {
       margin: 8px 0 0;
-      color: #6b7280;
+      color: #596775;
     }
 
     .card {
-      background: white;
+      background: #ffffff;
+      border: 1px solid #e1eaf0;
       border-radius: 20px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, .06);
+      box-shadow: 0 8px 30px rgba(27, 36, 48, .06);
       padding: 20px;
       margin-bottom: 16px;
     }
@@ -76,6 +79,23 @@
       font-size: 21px;
     }
 
+    .workflow-run {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .workflow-run img {
+      width: clamp(36px, 8vw, 64px);
+      height: auto;
+      flex-shrink: 0;
+    }
+
+    .workflow-run .button {
+      flex: 1;
+      min-width: 0;
+    }
+
     .button {
       border: 0;
       border-radius: 14px;
@@ -83,9 +103,36 @@
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
-      background: #111827;
-      color: white;
+      background: #9ed8f5;
+      color: #1b2430;
       transition: transform .05s ease, opacity .2s ease;
+    }
+
+    .button:hover:not(:disabled) {
+      background: #80cbed;
+    }
+
+    .button.secondary:hover:not(:disabled) {
+      background: #d9e2e9;
+    }
+
+    .button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid #287ba5;
+      outline-offset: 3px;
+    }
+
+    input[type="checkbox"] {
+      accent-color: #287ba5;
+    }
+
+    .selection-option:has(input:checked) {
+      background: #e8f6fd;
+      border-color: #80cbed;
+    }
+
+    .run-row a {
+      color: #24688c;
+      font-weight: 600;
     }
 
     .button:active {
@@ -98,8 +145,8 @@
     }
 
     .secondary {
-      background: #e5e7eb;
-      color: #111827;
+      background: #e8edf1;
+      color: #1b2430;
     }
 
     .status {
@@ -107,7 +154,7 @@
       align-items: center;
       gap: 8px;
       font-size: 14px;
-      color: #6b7280;
+      color: #596775;
       min-height: 20px;
     }
 
@@ -120,7 +167,7 @@
     }
 
     .dot.running {
-      background: #f59e0b;
+      background: #287ba5;
     }
 
     .dot.success {
@@ -136,20 +183,26 @@
       justify-content: space-between;
       align-items: center;
       gap: 16px;
-      padding: 12px 0;
-      border-top: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      margin-top: 8px;
+      border-radius: 12px;
     }
 
     .run-row:first-child {
       border-top: 0;
     }
 
+    .run-success { background: #eaf4ed; }
+    .run-failure { background: #f9eaea; }
+    .run-queued { background: #eef0f3; }
+    .run-progress { background: #fff0df; }
+
     .run-name {
       font-weight: 600;
     }
 
     .run-meta {
-      color: #6b7280;
+      color: #596775;
       font-size: 13px;
       margin-top: 3px;
     }
@@ -169,12 +222,40 @@
       margin-bottom: 8px;
     }
 
-    input {
+    input, select {
       width: 100%;
       padding: 13px 14px;
       border: 1px solid #d1d5db;
       border-radius: 12px;
       font-size: 16px;
+    }
+
+    #workflowSwitcher {
+      appearance: none;
+      width: 210px;
+      max-width: 100%;
+      margin-left: auto;
+      border: 0;
+      border-radius: 14px;
+      padding: 15px 44px 15px 18px;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      color: #1b2430;
+      background-color: #d9e2e9;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      cursor: pointer;
+    }
+
+    #workflowSwitcher:hover {
+      background-color: #c9d9e4;
+    }
+
+    #workflowSwitcher:focus-visible {
+      outline: 2px solid #1b2430;
+      outline-offset: 3px;
     }
 
     .error {
@@ -220,7 +301,7 @@
     }
 
     .selection-option:hover {
-      background: #f9fafb;
+      background: #edf7fc;
     }
 
     .selection-option.disabled {
@@ -275,7 +356,7 @@
 
     <!-- Login -->
     <section id="loginView" class="login card">
-      <h1>BNB Automation</h1>
+      <h1>BNB Automation Botlr</h1>
       <p class="subtitle">Sign in to run BNB workflows.</p>
 
       <form id="loginForm" style="margin-top:20px">
@@ -305,15 +386,20 @@
       </form>
     </section>
 
-    <!-- Main dashboard -->
+    <section id="homeView" class="hidden">
+      <header><h1>BNB Automation Botlr</h1><button id="homeLogout" class="button secondary">Log Out</button></header>
+      <section class="card" style="max-width:600px;margin:12vh auto 0">
+        <h2>Welcome to your Botlr Agent.</h2>
+        <img src="/images/botlr.png" alt="Botlr" style="display:block;width:240px;max-width:100%;height:auto;margin:24px auto;">
+        <select id="workflowSelect" aria-label="Select your workflow"><option value="" disabled selected>Select your workflow</option><option value="downloadInvoices">Download Invoices</option><option value="processSalesOrders">Process Sales Orders</option></select>
+      </section>
+    </section>
+    <!-- Selected workflow -->
     <section id="appView" class="hidden">
 
       <header>
         <div>
-          <h1>BNB Automation</h1>
-          <p class="subtitle">
-            Run and monitor your GitHub Actions workflows.
-          </p>
+          <h1 id="workflowTitle">Workflow</h1>
         </div>
 
         <button
@@ -325,10 +411,19 @@
         </button>
       </header>
 
+      <nav style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" aria-label="Workflow navigation">
+        <button class="button secondary homeButton" type="button">Home</button>
+        <select id="workflowSwitcher" aria-label="Switch Workflow">
+          <option value="" disabled selected>Switch Workflow</option>
+          <option value="downloadInvoices">Download Invoices</option>
+          <option value="processSalesOrders">Process Sales Orders</option>
+        </select>
+      </nav>
+      <p id="workflowDescription" style="line-height:1.6;margin-bottom:20px"></p>
       <section class="card">
-        <div class="workflow-grid">
+        <div>
 
-          <article class="workflow-card">
+          <article id="invoiceCard" class="workflow-card">
             <h2>Download Invoices</h2>
 
             <div id="invoiceStatus" class="status">
@@ -336,6 +431,8 @@
               <span>Checking status...</span>
             </div>
 
+            <div class="workflow-run">
+            <img src="/images/botlr_face.png" alt="">
             <button
               id="downloadInvoices"
               class="button"
@@ -343,9 +440,11 @@
             >
               Run Download Invoices
             </button>
+            <img src="/images/botlr_face.png" alt="">
+            </div>
           </article>
 
-          <article class="workflow-card">
+          <article id="salesCard" class="workflow-card">
             <h2>Process Sales Orders</h2>
 
             <div id="salesStatus" class="status">
@@ -353,6 +452,8 @@
               <span>Checking status...</span>
             </div>
 
+            <div class="workflow-run">
+            <img src="/images/botlr_face.png" alt="">
             <button
               id="processSalesOrders"
               class="button"
@@ -360,6 +461,8 @@
             >
               Run Process Sales Orders
             </button>
+            <img src="/images/botlr_face.png" alt="">
+            </div>
           </article>
 
         </div>
@@ -386,6 +489,19 @@
 
     </section>
 
+    <section id="startedView" class="hidden">
+      <section class="card" style="max-width:650px;margin:8vh auto 0;text-align:center">
+        <img src="/images/botlr_working.png" alt="Botlr working on your workflow" style="display:block;width:280px;max-width:100%;height:auto;margin:0 auto 24px">
+        <h2>Your workflow has successfully started! Your Botlr is working hard on it and will be done shortly.</h2>
+        <p id="startedStatus" class="subtitle" aria-live="polite"></p>
+        <div class="selection-actions">
+          <button id="startedBack" class="button secondary" type="button">Back</button>
+          <button id="startedRun" class="button" type="button">Status</button>
+          <button class="button secondary homeButton" type="button">Home</button>
+        </div>
+      </section>
+    </section>
+
     <!-- Individual workflow run log -->
     <section id="runView" class="hidden">
       <header>
@@ -393,14 +509,17 @@
           <h1 id="runTitle">Workflow Run</h1>
           <p class="subtitle">Automation output</p>
         </div>
-        <button id="runBack" class="button secondary" type="button">Back</button>
+        <nav style="display:flex;gap:8px;flex-wrap:wrap" aria-label="Run navigation"><button id="runBack" class="button secondary">Back</button></nav>
       </header>
 
       <section class="card">
-        <div id="runLogStatus" class="status">
+        <div class="toolbar">
+        <div id="runLogStatus" class="status" aria-live="polite">
           <span class="dot running"></span><span>Loading logs...</span>
         </div>
-        <pre id="runLogs" class="hidden" style="margin:16px 0 0; padding:16px; overflow:auto; max-height:70vh; background:#111827; color:#f9fafb; border-radius:12px; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap"></pre>
+        <button id="runRefresh" class="button secondary" type="button">Refresh</button>
+        </div>
+        <pre id="runLogs" class="hidden" style="margin:16px 0 0; padding:16px; overflow:auto; max-height:70vh; background:#1b2430; color:#f9fafb; border-radius:12px; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap"></pre>
       </section>
     </section>
 
