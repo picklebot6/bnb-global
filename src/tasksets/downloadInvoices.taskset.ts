@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { resolve } from 'node:path';
+import { basename } from 'node:path';
 import { login } from '../tasks/login';
 import {
   downloadInvoice,
@@ -29,6 +29,19 @@ function getPacificDate(): string {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+/** Builds an email subject from the customer prefix and downloaded invoice file names. */
+function createInvoiceEmailSubject(customerName: string, invoicePaths: string[]): string {
+  const customerPrefix = customerName.split('-', 1)[0].trim();
+  const invoiceNames = invoicePaths.map(invoicePath => {
+    const fileName = basename(invoicePath);
+    const invoiceIdentifier = fileName.match(/[A-Za-z]{2}\d+/)?.[0];
+
+    return invoiceIdentifier ?? fileName;
+  });
+
+  return `Invoice_${invoiceNames.join('_')} - ${customerPrefix}`;
+}
+
 /** Downloads pending invoices, emails them by customer, then marks their sheet rows sent. */
 export async function main(page: Page): Promise<void> {
   // clean up: remove any .pdf files
@@ -50,9 +63,9 @@ export async function main(page: Page): Promise<void> {
           'Invoice Number',
           invoice.invoiceNumber,
           'Status',
-          'Error',
+          'Email Missing',
         );
-        console.log(`Marked invoice ${invoice.invoiceNumber} as an error: Customer Mapping is empty`);
+        console.log(`Marked invoice ${invoice.invoiceNumber} as Email Missing: Customer Mapping is empty`);
       }
       continue;
     }
@@ -91,14 +104,10 @@ export async function main(page: Page): Promise<void> {
       // to: wqItem["emailTo"],
       to: "chloe.kim@bnbglobal.biz",  //temp only send to test
       cc: wqItem["emailCC"],
-      subject: wqItem["emailSubject"],
+      subject: createInvoiceEmailSubject(wqItem.customerName, downloadedInvoices),
       text: wqItem["emailBody"],
       html: wqItem.emailHtml,
       attachments: downloadedInvoices,
-      inlineImages: [{
-        path: resolve(process.cwd(), 'bnb_img.png'),
-        cid: 'bnb-gdp-logo',
-      }],
     });
 
     const emailSentDate = getPacificDate();
@@ -121,5 +130,6 @@ export async function main(page: Page): Promise<void> {
       );
       console.log(`Marked invoice ${invoice.invoiceNumber} as emailed on ${emailSentDate}`);
     }
+    await page.pause();
   }
 }

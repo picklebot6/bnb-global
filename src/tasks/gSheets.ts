@@ -332,15 +332,24 @@ export async function updateCellByRowValue(
   const updateColumnLetter = columnIndexToLetter(
     updateColumnIndex,
   );
+  const escapedSheetName = sheetName.replaceAll("'", "''");
+  const targetRange = `'${escapedSheetName}'!${updateColumnLetter}${sheetRow}`;
 
-  await sheets.spreadsheets.values.update({
+  const updateResult = await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `${sheetName}!${updateColumnLetter}${sheetRow}`,
+    range: targetRange,
     valueInputOption: 'USER_ENTERED',
+    includeValuesInResponse: true,
     requestBody: {
       values: [[newValue]],
     },
   });
+
+  if (updateResult.data.updatedCells !== 1) {
+    throw new Error(
+      `Google Sheets did not confirm the update to ${targetRange}.`,
+    );
+  }
 }
 
 /**

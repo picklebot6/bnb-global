@@ -5,6 +5,7 @@ import { click, write, wait, waitForLoad } from '../helpers/actions';
 import { homeSelectors, invoiceSelectors } from '../helpers/selectors';
 import { config } from '../config';
 import { readEntireSheet } from './gSheets';
+import { createInvoiceEmailHtml, createInvoiceEmailText } from '../templates/invoiceEmail';
 
 
 export interface InvoiceWorkqueueItem {
@@ -22,59 +23,9 @@ export interface WorkqueueItem {
   hasEmptyCustomerMapping: boolean;
   emailTo: string[];
   emailCC: string[];
-  emailSubject: string;
   emailBody: string;
   emailHtml: string;
   invoices: InvoiceWorkqueueItem[];
-}
-
-/** Returns the plain-text fallback for the standard BNB invoice email. */
-function createInvoiceEmailText(): string {
-  return [
-    'Dear Customer :',
-    '',
-    'Your invoice is attached. Please remit payment at your earliest convenience.',
-    '',
-    'Thank you for your business - we appreciate it very much.',
-    '',
-    'Sincerely,',
-    '',
-    'BNB GLOBAL',
-    '(562) 926-7574',
-    '',
-    'BNB GLOBAL',
-    '13415 Marquardt Ave.,',
-    'Santa Fe Springs, CA 90670',
-    'T) 562-926-7574    F) 562-926-7597',
-    'E) info@bnbglobal.biz',
-  ].join('\n');
-}
-
-/** Builds the BNB invoice email HTML with one fixed signature block. */
-function createInvoiceEmailHtml(): string {
-  return `
-    <div style="color: #242424; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5; margin: 0; padding: 0;">
-      <p style="margin: 0 0 24px;">Dear Customer :</p>
-      <p style="margin: 0 0 24px;">Your invoice is attached. &nbsp;Please remit payment at your earliest convenience.</p>
-      <p style="margin: 0 0 24px;">Thank you for your business - we appreciate it very much.</p>
-      <p style="margin: 0 0 24px;">Sincerely,</p>
-      <p style="margin: 0 0 36px;">
-        BNB GLOBAL<br>
-        <a href="tel:+15629267574" style="color: #1155cc;">(562) 926-7574</a>
-      </p>
-      <p style="margin: 0;">
-        <strong style="font-size: 26px; line-height: 1.2;">BNB GLOBAL</strong><br>
-        <a href="https://maps.google.com/?q=13415+Marquardt+Ave+Santa+Fe+Springs+CA+90670" style="color: #1155cc;">
-          13415 Marquardt Ave.,<br>
-          Santa Fe Springs, CA 90670
-        </a><br>
-        T) <a href="tel:+15629267574" style="color: #1155cc;">562-926-7574</a>
-        &nbsp; F) <a href="tel:+15629267597" style="color: #1155cc;">562-926-7597</a><br>
-        E) <a href="mailto:info@bnbglobal.biz" style="color: #1155cc;">info@bnbglobal.biz</a><br>
-      </p>
-      <img src="cid:bnb-gdp-logo" width="170" alt="GDP Compliant" style="display: block; margin-top: 24px;">
-    </div>
-  `;
 }
 
 /** Opens the Invoice list and waits until its search control is ready. */
@@ -183,13 +134,6 @@ export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
     config.invoicesSheetCustomerMappingTab,
   );
 
-  const emailFormat = await readEntireSheet(
-    spreadsheetId,
-    config.invoicesSheetEmailTab,
-  );
-
-  const emailTemplate = emailFormat[0];
-
   const workqueueMap = new Map<string, WorkqueueItem>();
 
   for (const item of toDoList) {
@@ -226,10 +170,6 @@ export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
               .map(email => email.trim())
               .filter(Boolean)
           : [],
-        emailSubject: emailTemplate.Subject.replace(
-          '{customerName}',
-          customerName,
-        ),
         emailBody: createInvoiceEmailText(),
         emailHtml: createInvoiceEmailHtml(),
         invoices: [],

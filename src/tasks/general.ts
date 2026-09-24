@@ -8,8 +8,6 @@ export async function selectMenu(page: Page, menu: string): Promise<void> {
   if (menu == "Invoice") {
     await click(page, 'Invoice Dropdown', homeSelectors.invoiceDropdown);
     await click(page, 'Invoice Option', homeSelectors.invoiceOption);
-    await wait(page, 'Invoice Label', homeSelectors.invoiceLabel);
-    await click(page, 'Invoice Label', homeSelectors.invoiceLabel);
     await page.waitForTimeout(5000);
     await wait(page,'Invoice Search',invoiceSelectors.invSearch);
   } else if (menu == "Sales") {
