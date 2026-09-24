@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { resolve } from 'node:path';
 import { login } from '../tasks/login';
 import {
   downloadInvoice,
@@ -94,6 +95,10 @@ export async function main(page: Page): Promise<void> {
       text: wqItem["emailBody"],
       html: wqItem.emailHtml,
       attachments: downloadedInvoices,
+      inlineImages: [{
+        path: resolve(process.cwd(), 'bnb_img.png'),
+        cid: 'bnb-gdp-logo',
+      }],
     });
 
     const emailSentDate = getPacificDate();

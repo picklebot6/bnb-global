@@ -11,6 +11,11 @@ export interface EmailOptions {
   text: string;
   html?: string;
   attachments?: string[];
+  inlineImages?: Array<{
+    path: string;
+    cid: string;
+    filename?: string;
+  }>;
 }
 
 /** Sends an email with optional CC recipients and local file attachments, returning its message ID. */
@@ -21,6 +26,7 @@ export async function sendEmail({
   text,
   html,
   attachments = [],
+  inlineImages = [],
 }: EmailOptions): Promise<string> {
   const envPath = resolve(__dirname, '../../.env');
 
@@ -79,6 +85,19 @@ export async function sendEmail({
     }),
   );
 
+  const embeddedImages = await Promise.all(
+    inlineImages.map(async image => {
+      const path = resolve(image.path);
+      await access(path, constants.R_OK);
+
+      return {
+        filename: image.filename ?? basename(path),
+        path,
+        cid: image.cid,
+      };
+    }),
+  );
+
   const transport = createTransport({
     host,
     port,
@@ -99,7 +118,7 @@ export async function sendEmail({
   console.log(
     `Sending email to ${Array.isArray(to) ? to.length : 1} recipient(s), ` +
     `${cc ? (Array.isArray(cc) ? cc.length : 1) : 0} CC recipient(s), ` +
-    `with ${files.length} attachment(s)`,
+    `with ${files.length} attachment(s) and ${embeddedImages.length} inline image(s)`,
   );
 
   const result = await transport.sendMail({
@@ -109,7 +128,7 @@ export async function sendEmail({
     subject,
     text,
     html,
-    attachments: files,
+    attachments: [...files, ...embeddedImages],
   });
 
   if (result.rejected.length > 0) {

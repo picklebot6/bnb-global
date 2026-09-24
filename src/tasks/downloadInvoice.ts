@@ -67,6 +67,7 @@ function createInvoiceEmailHtml(body: string): string {
         &nbsp; F) <a href="tel:+15629267597" style="color: #1155cc;">562-926-7597</a><br>
         E) <a href="mailto:info@bnbglobal.biz" style="color: #1155cc;">info@bnbglobal.biz</a>
       </p>
+      <img src="cid:bnb-gdp-logo" width="170" alt="GDP Compliant" style="display: block; margin-top: 24px;">
     </div>
   `;
 }
