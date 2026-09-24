@@ -68,6 +68,11 @@ jobs:
             exit 0
           fi
 
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+
           for video in "${videos[@]}"; do
             ffmpeg -hide_banner -loglevel error -y \
               -i "$video" \
