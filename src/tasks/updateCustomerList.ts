@@ -78,7 +78,7 @@ export async function getInvoiceEmailAddresses(page: Page): Promise<string[]> {
   await page.waitForTimeout(config.preActionDelayMs);
 
   if (
-    await contactInfoNoData.isVisible() ||
+    await contactInfoNoData.count() > 0 ||
     await contactRows.count() === 0
   ) {
     console.log('Contact Info has no data; using a blank Email To value');
