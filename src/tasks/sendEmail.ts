@@ -94,6 +94,7 @@ export async function sendEmail({
         filename: image.filename ?? basename(path),
         path,
         cid: image.cid,
+        contentDisposition: 'inline' as const,
       };
     }),
   );
