@@ -43,6 +43,46 @@ function formatTime(iso) {
   });
 }
 
+/** Extracts the first MP4 file from the workflow artifact ZIP in the browser. */
+async function extractRecording(archive) {
+  const bytes = new Uint8Array(archive);
+  const view = new DataView(archive);
+  let end = bytes.length - 22;
+  while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end--;
+  if (end < 0) throw new Error('The recording archive is invalid.');
+
+  const entries = view.getUint16(end + 10, true);
+  let offset = view.getUint32(end + 16, true);
+  const decoder = new TextDecoder();
+  for (let index = 0; index < entries; index++) {
+    const compression = view.getUint16(offset + 10, true);
+    const size = view.getUint32(offset + 20, true);
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localOffset = view.getUint32(offset + 42, true);
+    const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLength));
+
+    if (/\.mp4$/i.test(name)) {
+      const localNameLength = view.getUint16(localOffset + 26, true);
+      const localExtraLength = view.getUint16(localOffset + 28, true);
+      const start = localOffset + 30 + localNameLength + localExtraLength;
+      const compressed = bytes.slice(start, start + size);
+      const contents = compression === 0
+        ? compressed
+        : new Uint8Array(await new Response(
+            new Blob([compressed]).stream().pipeThrough(
+              new DecompressionStream('deflate-raw'),
+            ),
+          ).arrayBuffer());
+      return new Blob([contents], { type: 'video/mp4' });
+    }
+
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+  throw new Error('No MP4 recording was found for this run.');
+}
+
 async function request(path, options = {}) {
   const response = await fetch(path, {
     cache: 'no-store',
@@ -62,6 +102,14 @@ async function request(path, options = {}) {
   }
 
   return body;
+}
+
+/** Requests cancellation of an active workflow run. */
+async function cancelRun(workflowId, runId) {
+  await request(`/api/workflows/${workflowId}/runs/${runId}/cancel`, {
+    method: 'POST',
+    body: '{}',
+  });
 }
 
 let selectedWorkflow;
@@ -101,6 +149,7 @@ async function renderRoute() {
     showOnly('startedView');
     const runId = params.get('started');
     $('startedRun').disabled = !/^\d+$/.test(runId);
+    $('startedCancel').disabled = !/^\d+$/.test(runId);
     $('startedStatus').textContent = $('startedRun').disabled ? 'The workflow was accepted, but its run link was unavailable. Use Back to check Recent Runs.' : '';
     return;
   }
@@ -142,6 +191,10 @@ async function showRunLogs(runId) {
   showOnly('runView');
   const version = viewVersion;
   $('runLogs').textContent = '';
+  $('watchRecording').classList.add('hidden');
+  $('runCancel').classList.add('hidden');
+  $('runRecording').classList.add('hidden');
+  $('runRecording').removeAttribute('src');
   $('runTitle').textContent = `${workflow.label} · Run #${runId}`;
   let refreshing = false;
   async function refreshRunStatus() {
@@ -155,6 +208,8 @@ async function showRunLogs(runId) {
       );
       if (version !== viewVersion) return;
       const runState = result.run.conclusion || result.run.status;
+      const canCancel = result.run.status === 'in_progress';
+      $('runCancel').classList.toggle('hidden', !canCancel);
       const jobLines = result.jobs.flatMap(job => [
         `${job.name}: ${formatStatus(job.conclusion || job.status)}`,
         ...job.steps.map(step => `  ${step.name}: ${formatStatus(step.conclusion || step.status)}`),
@@ -174,6 +229,7 @@ async function showRunLogs(runId) {
         const active = result.run.status !== 'completed';
         setStatus($('runLogStatus'), active ? 'Latest available logs loaded. Refreshing every 5 seconds.' : 'Logs loaded.', active ? 'running' : 'success');
         if (active) runStatusTimer = setTimeout(refreshRunStatus, 5_000);
+        $('watchRecording').classList.toggle('hidden', active);
       } catch {
         if (version !== viewVersion) return;
         setStatus($('runLogStatus'), result.run.status !== 'completed' ? 'Run in progress. Showing latest step status; logs are not available yet.' : 'Run completed. Logs are still being prepared.', 'running');
@@ -188,6 +244,43 @@ async function showRunLogs(runId) {
     }
   }
   $('runRefresh').onclick = refreshRunStatus;
+  $('runCancel').onclick = async () => {
+    const button = $('runCancel');
+    button.disabled = true;
+    try {
+      await cancelRun(workflowId, runId);
+      setStatus($('runLogStatus'), 'Cancellation requested.', 'running');
+      button.classList.add('hidden');
+      await refreshRunStatus();
+    } catch (error) {
+      setStatus($('runLogStatus'), error.message, 'failure');
+    } finally {
+      button.disabled = false;
+    }
+  };
+  $('watchRecording').onclick = async () => {
+    const button = $('watchRecording');
+    button.disabled = true;
+    button.textContent = 'Loading Recording...';
+    try {
+      const response = await fetch(
+        `/api/workflows/${workflowId}/runs/${runId}/recording`,
+        { cache: 'no-store' },
+      );
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Could not load the recording.');
+      }
+      const recording = $('runRecording');
+      recording.src = URL.createObjectURL(await extractRecording(await response.arrayBuffer()));
+      recording.classList.remove('hidden');
+      button.textContent = 'Recording Loaded';
+    } catch (error) {
+      button.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   setStatus($('runLogStatus'), 'Loading run status...', 'running');
   await refreshRunStatus();
@@ -203,6 +296,18 @@ $('startedBack').addEventListener('click', () => showAppView());
 $('startedRun').addEventListener('click', () => {
   const runId = new URLSearchParams(location.search).get('started');
   if (/^\d+$/.test(runId)) navigate(`/?workflow=${selectedWorkflow}&run=${runId}`);
+});
+$('startedCancel').addEventListener('click', async () => {
+  const runId = new URLSearchParams(location.search).get('started');
+  const button = $('startedCancel');
+  button.disabled = true;
+  try {
+    await cancelRun(selectedWorkflow, runId);
+    $('startedStatus').textContent = 'Cancellation requested.';
+  } catch (error) {
+    $('startedStatus').textContent = error.message;
+    button.disabled = false;
+  }
 });
 
 async function runWorkflow(id, inputs = {}) {
@@ -307,13 +412,27 @@ function renderRuns(results) {
             </div>
           </div>
 
-          <a href="/?workflow=${encodeURIComponent(run.workflowId)}&run=${encodeURIComponent(run.id)}">
-            View
-          </a>
+          <div class="run-actions">
+            ${run.status === 'in_progress' ? `<button class="button danger" type="button" data-cancel-workflow="${run.workflowId}" data-cancel-run="${run.id}">Cancel</button>` : ''}
+            <a href="/?workflow=${encodeURIComponent(run.workflowId)}&run=${encodeURIComponent(run.id)}">View</a>
+          </div>
         </div>
       `;
     })
     .join('');
+
+  for (const button of document.querySelectorAll('[data-cancel-run]')) {
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        await cancelRun(button.dataset.cancelWorkflow, button.dataset.cancelRun);
+        await refreshAll();
+      } catch (error) {
+        button.textContent = error.message;
+        button.disabled = false;
+      }
+    });
+  }
 
   for (const { id } of results) {
     const matching =

@@ -247,6 +247,21 @@ async function dispatchWorkflow(
   return json({ ok: true, runId: details.workflow_run_id ?? null });
 }
 
+/** Requests cancellation of a GitHub Actions workflow run. */
+async function cancelWorkflowRun(runId: string, env: Env): Promise<Response> {
+  const response = await fetch(
+    `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs/${encodeURIComponent(runId)}/cancel`,
+    { method: 'POST', headers: githubHeaders(env.GITHUB_TOKEN) },
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    return json({ ok: false, error: body || 'GitHub could not cancel this run.' }, response.status);
+  }
+
+  return json({ ok: true });
+}
+
 async function getLatestRuns(
   workflowFile: string,
   env: Env,
@@ -463,6 +478,44 @@ async function getRunLogs(
       error: error instanceof Error ? error.message : 'Could not read the log archive.',
     }, 502);
   }
+}
+
+/** Streams the ZIP artifact that contains a workflow run's MP4 recording. */
+async function getRunRecording(runId: string, env: Env): Promise<Response> {
+  const artifactsResponse = await fetch(
+    `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs/${encodeURIComponent(runId)}/artifacts?per_page=100`,
+    { headers: githubHeaders(env.GITHUB_TOKEN) },
+  );
+
+  if (!artifactsResponse.ok) {
+    return json({ ok: false, error: 'Could not find recording artifacts.' }, 502);
+  }
+
+  const artifacts = await artifactsResponse.json() as {
+    artifacts?: Array<{ id: number; name: string; expired: boolean }>;
+  };
+  const recording = artifacts.artifacts?.find(
+    artifact => !artifact.expired && artifact.name.includes('videos-'),
+  );
+
+  if (!recording) {
+    return json({ ok: false, error: 'No recording is available for this run yet.' }, 404);
+  }
+
+  const archiveResponse = await fetch(
+    `https://api.github.com/repos/${OWNER}/${REPO}/actions/artifacts/${recording.id}/zip`,
+    { headers: githubHeaders(env.GITHUB_TOKEN), redirect: 'manual' },
+  );
+  const downloadUrl = archiveResponse.headers.get('Location');
+  const downloadResponse = downloadUrl ? await fetch(downloadUrl) : archiveResponse;
+
+  if (!downloadResponse.ok || !downloadResponse.body) {
+    return json({ ok: false, error: 'Could not download the recording.' }, 502);
+  }
+
+  return new Response(downloadResponse.body, {
+    headers: { 'content-type': 'application/zip', 'cache-control': 'no-store' },
+  });
 }
 
 /** Returns the current workflow, job, and step states while a run is active. */
@@ -787,6 +840,40 @@ export default {
         WORKFLOWS[logsMatch[1]].logMarker,
         env,
       );
+    }
+
+    const recordingMatch =
+      url.pathname.match(
+        /^\/api\/workflows\/([^/]+)\/runs\/(\d+)\/recording$/,
+      );
+
+    if (recordingMatch && request.method === 'GET') {
+      if (!(await isAuthenticated(request, env.SESSION_SECRET))) {
+        return json({ ok: false, error: 'Unauthorized' }, 401);
+      }
+
+      if (!WORKFLOWS[recordingMatch[1]]) {
+        return json({ ok: false, error: 'Unknown workflow.' }, 404);
+      }
+
+      return getRunRecording(recordingMatch[2], env);
+    }
+
+    const cancelMatch =
+      url.pathname.match(
+        /^\/api\/workflows\/([^/]+)\/runs\/(\d+)\/cancel$/,
+      );
+
+    if (cancelMatch && request.method === 'POST') {
+      if (!(await isAuthenticated(request, env.SESSION_SECRET))) {
+        return json({ ok: false, error: 'Unauthorized' }, 401);
+      }
+
+      if (!WORKFLOWS[cancelMatch[1]]) {
+        return json({ ok: false, error: 'Unknown workflow.' }, 404);
+      }
+
+      return cancelWorkflowRun(cancelMatch[2], env);
     }
 
     const statusMatch =

@@ -76,7 +76,9 @@ jobs:
         run: |
           shopt -s globstar nullglob
 
-          videos=(test-results/**/*.webm)
+          # Playwright names the primary page recording video.webm. Popup pages
+          # receive suffixed names such as video-1.webm and are intentionally skipped.
+          videos=(test-results/**/video.webm)
 
           if [ "${#videos[@]}" -eq 0 ]; then
             echo "No recordings were produced."
@@ -106,6 +108,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: workflow-videos-${{ github.run_id }}-${{ github.run_attempt }}
-          path: test-results/**/*.mp4
+          path: test-results/**/video.mp4
           if-no-files-found: warn
           retention-days: 7
