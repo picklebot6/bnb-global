@@ -71,7 +71,7 @@ export async function getInvoiceEmailAddresses(page: Page): Promise<string[]> {
   const contactRows = contactGrid.locator('.x-grid3-row');
   const contactInfoNoData = page.locator(`xpath=${customerSelectors.contactInfoNoData}`);
 
-  const contactInfoState = await Promise.race([
+  const contactInfoState = await Promise.any([
     contactRows.first().waitFor({
       state: 'visible',
       timeout: config.elementWaitTimeoutMs,

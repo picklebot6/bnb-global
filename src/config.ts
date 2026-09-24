@@ -13,7 +13,7 @@ if (!baseUrl) {
 }
 
 export const config = {
-  elementWaitTimeoutMs: 5_000,
+  elementWaitTimeoutMs: 15_000,
   yesElementNotExistTimeoutMs: 2500,
   elementNotExistTimeoutMs: 60_000,
   preActionDelayMs: 500,

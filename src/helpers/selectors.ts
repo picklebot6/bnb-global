@@ -50,6 +50,6 @@ export const customerSelectors = {
   email: "//div[contains(text(),'@') and contains(text(),'.com')]",
   closeContact: "//div[contains(@class,'close')]",
   closeForm: "//button[text()='Close']",
-  contactInfoNoData: "//div[contains(@class,'x-grid3')][.//div[contains(@class,'x-grid3-hd-inner') and starts-with(normalize-space(.), 'Email_Invoice')]]//div[contains(@class,'x-grid-empty') and normalize-space(.)='No Data']",
+  contactInfoNoData: "//div[contains(@class,'x-grid-empty') and normalize-space(.)='No Data']",
   nextPage: "//div[contains(@class,'x-grid-panel')][.//div[contains(@class,'x-grid3-hd-inner') and starts-with(normalize-space(.), 'Cstm Name')]]//button[contains(@class,'page-next')]",
 } as const
