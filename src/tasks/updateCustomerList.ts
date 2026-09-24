@@ -71,18 +71,16 @@ export async function getInvoiceEmailAddresses(page: Page): Promise<string[]> {
   const contactRows = contactGrid.locator('.x-grid3-row');
   const contactInfoNoData = page.locator(`xpath=${customerSelectors.contactInfoNoData}`);
 
-  const contactInfoState = await Promise.any([
-    contactRows.first().waitFor({
-      state: 'visible',
-      timeout: config.elementWaitTimeoutMs,
-    }).then(() => 'rows' as const),
-    contactInfoNoData.waitFor({
-      state: 'visible',
-      timeout: config.elementWaitTimeoutMs,
-    }).then(() => 'empty' as const),
-  ]);
+  await contactGrid.waitFor({
+    state: 'visible',
+    timeout: config.elementWaitTimeoutMs,
+  });
+  await page.waitForTimeout(config.preActionDelayMs);
 
-  if (contactInfoState === 'empty') {
+  if (
+    await contactInfoNoData.isVisible() ||
+    await contactRows.count() === 0
+  ) {
     console.log('Contact Info has no data; using a blank Email To value');
     return [];
   }
