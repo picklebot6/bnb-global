@@ -28,44 +28,49 @@ export interface WorkqueueItem {
   invoices: InvoiceWorkqueueItem[];
 }
 
-/** Escapes plain-text template content before placing it in an HTML email. */
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+/** Returns the plain-text fallback for the standard BNB invoice email. */
+function createInvoiceEmailText(): string {
+  return [
+    'Dear Customer :',
+    '',
+    'Your invoice is attached. Please remit payment at your earliest convenience.',
+    '',
+    'Thank you for your business - we appreciate it very much.',
+    '',
+    'Sincerely,',
+    '',
+    'BNB GLOBAL',
+    '(562) 926-7574',
+    '',
+    'BNB GLOBAL',
+    '13415 Marquardt Ave.,',
+    'Santa Fe Springs, CA 90670',
+    'T) 562-926-7574    F) 562-926-7597',
+    'E) info@bnbglobal.biz',
+  ].join('\n');
 }
 
-/** Builds the styled BNB invoice email body from the plain-text sheet template. */
-function createInvoiceEmailHtml(body: string): string {
-  const paragraphs = (body.trim() || [
-    'Dear Customer :',
-    'Your invoice is attached. Please remit payment at your earliest convenience.',
-    'Thank you for your business - we appreciate it very much.',
-  ].join('\n\n'))
-    .split(/\r?\n\s*\r?\n/)
-    .map(paragraph => `<p style="margin: 0 0 24px;">${escapeHtml(paragraph).replaceAll('\n', '<br>')}</p>`)
-    .join('');
-
+/** Builds the BNB invoice email HTML with one fixed signature block. */
+function createInvoiceEmailHtml(): string {
   return `
-    <div style="color: #242424; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5;">
-      ${paragraphs}
+    <div style="color: #242424; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5; margin: 0; padding: 0;">
+      <p style="margin: 0 0 24px;">Dear Customer :</p>
+      <p style="margin: 0 0 24px;">Your invoice is attached. &nbsp;Please remit payment at your earliest convenience.</p>
+      <p style="margin: 0 0 24px;">Thank you for your business - we appreciate it very much.</p>
       <p style="margin: 0 0 24px;">Sincerely,</p>
       <p style="margin: 0 0 36px;">
         BNB GLOBAL<br>
         <a href="tel:+15629267574" style="color: #1155cc;">(562) 926-7574</a>
       </p>
       <p style="margin: 0;">
-        <strong style="font-size: 26px;">BNB GLOBAL</strong><br>
+        <strong style="font-size: 26px; line-height: 1.2;">BNB GLOBAL</strong><br>
         <a href="https://maps.google.com/?q=13415+Marquardt+Ave+Santa+Fe+Springs+CA+90670" style="color: #1155cc;">
           13415 Marquardt Ave.,<br>
           Santa Fe Springs, CA 90670
         </a><br>
         T) <a href="tel:+15629267574" style="color: #1155cc;">562-926-7574</a>
         &nbsp; F) <a href="tel:+15629267597" style="color: #1155cc;">562-926-7597</a><br>
-        E) <a href="mailto:info@bnbglobal.biz" style="color: #1155cc;">info@bnbglobal.biz</a>
+        E) <a href="mailto:info@bnbglobal.biz" style="color: #1155cc;">info@bnbglobal.biz</a><br>
       </p>
       <img src="cid:bnb-gdp-logo" width="170" alt="GDP Compliant" style="display: block; margin-top: 24px;">
     </div>
@@ -225,8 +230,8 @@ export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
           '{customerName}',
           customerName,
         ),
-        emailBody: emailTemplate.Body,
-        emailHtml: createInvoiceEmailHtml(emailTemplate.Body),
+        emailBody: createInvoiceEmailText(),
+        emailHtml: createInvoiceEmailHtml(),
         invoices: [],
       };
 
