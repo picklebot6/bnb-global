@@ -24,9 +24,52 @@ export interface WorkqueueItem {
   emailCC: string[];
   emailSubject: string;
   emailBody: string;
+  emailHtml: string;
   invoices: InvoiceWorkqueueItem[];
 }
 
+/** Escapes plain-text template content before placing it in an HTML email. */
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+/** Builds the styled BNB invoice email body from the plain-text sheet template. */
+function createInvoiceEmailHtml(body: string): string {
+  const paragraphs = (body.trim() || [
+    'Dear Customer :',
+    'Your invoice is attached. Please remit payment at your earliest convenience.',
+    'Thank you for your business - we appreciate it very much.',
+  ].join('\n\n'))
+    .split(/\r?\n\s*\r?\n/)
+    .map(paragraph => `<p style="margin: 0 0 24px;">${escapeHtml(paragraph).replaceAll('\n', '<br>')}</p>`)
+    .join('');
+
+  return `
+    <div style="color: #242424; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5;">
+      ${paragraphs}
+      <p style="margin: 0 0 24px;">Sincerely,</p>
+      <p style="margin: 0 0 36px;">
+        BNB GLOBAL<br>
+        <a href="tel:+15629267574" style="color: #1155cc;">(562) 926-7574</a>
+      </p>
+      <p style="margin: 0;">
+        <strong style="font-size: 26px;">BNB GLOBAL</strong><br>
+        <a href="https://maps.google.com/?q=13415+Marquardt+Ave+Santa+Fe+Springs+CA+90670" style="color: #1155cc;">
+          13415 Marquardt Ave.,<br>
+          Santa Fe Springs, CA 90670
+        </a><br>
+        T) <a href="tel:+15629267574" style="color: #1155cc;">562-926-7574</a>
+        &nbsp; F) <a href="tel:+15629267597" style="color: #1155cc;">562-926-7597</a><br>
+        E) <a href="mailto:info@bnbglobal.biz" style="color: #1155cc;">info@bnbglobal.biz</a>
+      </p>
+    </div>
+  `;
+}
 
 /** Opens the Invoice list and waits until its search control is ready. */
 export async function goToInvoice(page: Page): Promise<void> {
@@ -182,6 +225,7 @@ export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
           customerName,
         ),
         emailBody: emailTemplate.Body,
+        emailHtml: createInvoiceEmailHtml(emailTemplate.Body),
         invoices: [],
       };
 

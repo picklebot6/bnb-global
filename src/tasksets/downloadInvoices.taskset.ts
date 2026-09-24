@@ -92,6 +92,7 @@ export async function main(page: Page): Promise<void> {
       cc: wqItem["emailCC"],
       subject: wqItem["emailSubject"],
       text: wqItem["emailBody"],
+      html: wqItem.emailHtml,
       attachments: downloadedInvoices,
     });
 

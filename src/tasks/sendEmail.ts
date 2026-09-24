@@ -9,6 +9,7 @@ export interface EmailOptions {
   cc?: string | string[];
   subject: string;
   text: string;
+  html?: string;
   attachments?: string[];
 }
 
@@ -18,6 +19,7 @@ export async function sendEmail({
   cc,
   subject,
   text,
+  html,
   attachments = [],
 }: EmailOptions): Promise<string> {
   const envPath = resolve(__dirname, '../../.env');
@@ -106,6 +108,7 @@ export async function sendEmail({
     cc,
     subject,
     text,
+    html,
     attachments: files,
   });
 
