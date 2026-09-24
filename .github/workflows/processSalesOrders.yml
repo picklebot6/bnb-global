@@ -85,8 +85,8 @@ jobs:
             ffmpeg -hide_banner -loglevel error -y \
               -i "$video" \
               -c:v libx264 \
-              -preset fast \
-              -crf 18 \
+              -preset veryfast \
+              -crf 23 \
               -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
               -pix_fmt yuv420p \
               -an \
