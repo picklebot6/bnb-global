@@ -14,6 +14,7 @@ import {
 } from '../tasks/updateCustomerList';
 
 
+/** Synchronizes BNB customer details into the Customer Mapping sheet. */
 export async function main(page: Page): Promise<void> {
   const spreadsheetId = config.invoicesSheet;
   const customerMappingTab = config.invoicesSheetCustomerMappingTab
@@ -31,6 +32,7 @@ export async function main(page: Page): Promise<void> {
   // starting from index 1
   let idx = 1
 
+  /** Advances to the next customer row or loads the next page after row 100. */
   async function advanceCustomerIndex(): Promise<void> {
     if (idx === 100) {
       idx = 1;

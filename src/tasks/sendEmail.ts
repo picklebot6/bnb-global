@@ -12,7 +12,7 @@ export interface EmailOptions {
   attachments?: string[];
 }
 
-/** Send an email with optional CC recipients and local file attachments. Returns the message ID. */
+/** Sends an email with optional CC recipients and local file attachments, returning its message ID. */
 export async function sendEmail({
   to,
   cc,
@@ -26,6 +26,7 @@ export async function sendEmail({
     loadEnvFile(envPath);
   }
 
+  /** Reads one required email configuration value from the environment. */
   function required(name: string): string {
     const value = process.env[name];
 

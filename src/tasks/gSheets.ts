@@ -9,6 +9,7 @@ if (!process.env.CI && existsSync(envPath)) {
   loadEnvFile(envPath);
 }
 
+/** Returns a required environment variable or throws a clear setup error. */
 function required(name: string): string {
   const value = process.env[name];
 
@@ -19,6 +20,7 @@ function required(name: string): string {
   return value;
 }
 
+/** Creates an authenticated Google Sheets client from the configured OAuth values. */
 function getSheetsClient(): sheets_v4.Sheets {
   const clientId = required('G_AUTH_CLIENT_ID');
   const clientSecret = required('G_AUTH_CLIENT_SECRET');
@@ -64,7 +66,7 @@ export async function readSheet(
 
 /**
  * Read a range and convert the rows into objects using
- * the first row as the column headers.
+ * the first non-empty row as the column headers.
  *
  * Example:
  * [
@@ -87,13 +89,17 @@ export async function readSheetAsObjects(
 ): Promise<Record<string, string>[]> {
   const rows = await readSheet(spreadsheetId, range);
 
-  if (rows.length === 0) {
+  const headerRowIndex = rows.findIndex(row =>
+    row.some(value => String(value ?? '').trim() !== ''),
+  );
+
+  if (headerRowIndex === -1) {
     return [];
   }
 
-  const headers = rows[0];
+  const headers = rows[headerRowIndex];
 
-  return rows.slice(1).map(row =>
+  return rows.slice(headerRowIndex + 1).map(row =>
     Object.fromEntries(
       headers.map((header, index) => [
         header,
@@ -256,7 +262,7 @@ export async function appendRawRowsToSheet(
  * Finds a row using a column header + value,
  * then updates another column in that same row.
  *
- * Assumes row 1 contains the column headers.
+ * Uses the first non-empty row as the column headers.
  */
 export async function updateCellByRowValue(
   spreadsheetId: string,
@@ -276,11 +282,15 @@ export async function updateCellByRowValue(
 
   const rows = result.data.values ?? [];
 
-  if (rows.length === 0) {
+  const headerRowIndex = rows.findIndex(row =>
+    row.some(value => String(value ?? '').trim() !== ''),
+  );
+
+  if (headerRowIndex === -1) {
     throw new Error(`Sheet "${sheetName}" is empty.`);
   }
 
-  const headers = rows[0].map(value =>
+  const headers = rows[headerRowIndex].map(value =>
     String(value ?? '').trim(),
   );
 
@@ -304,8 +314,7 @@ export async function updateCellByRowValue(
     );
   }
 
-  // Skip row 1 because it contains the headers.
-  const dataRowIndex = rows.slice(1).findIndex(
+  const dataRowIndex = rows.slice(headerRowIndex + 1).findIndex(
     row =>
       String(row[searchColumnIndex] ?? '').trim() ===
       searchValue.trim(),
@@ -317,9 +326,8 @@ export async function updateCellByRowValue(
     );
   }
 
-  // +1 because we sliced off the header.
-  // +1 because Google Sheets rows are 1-based.
-  const sheetRow = dataRowIndex + 2;
+  // +1 because the sheet uses one-based row numbers.
+  const sheetRow = headerRowIndex + dataRowIndex + 2;
 
   const updateColumnLetter = columnIndexToLetter(
     updateColumnIndex,
@@ -359,6 +367,7 @@ function columnIndexToLetter(index: number): string {
   return column;
 }
 
+/** Reads a whole sheet into objects keyed by its first non-empty header row. */
 export async function readEntireSheet(
   spreadsheetId: string,
   sheetName: string,
@@ -372,13 +381,17 @@ export async function readEntireSheet(
 
   const rows = (result.data.values ?? []) as string[][];
 
-  if (rows.length === 0) {
+  const headerRowIndex = rows.findIndex(row =>
+    row.some(value => String(value ?? '').trim() !== ''),
+  );
+
+  if (headerRowIndex === -1) {
     return [];
   }
 
-  const headers = rows[0];
+  const headers = rows[headerRowIndex];
 
-  return rows.slice(1).map(row =>
+  return rows.slice(headerRowIndex + 1).map(row =>
     Object.fromEntries(
       headers.map((header, index) => [
         header,

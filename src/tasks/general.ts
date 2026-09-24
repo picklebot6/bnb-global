@@ -3,6 +3,7 @@ import { click, write, wait } from '../helpers/actions';
 import { salesSelectors, invoiceSelectors, homeSelectors, customerSelectors } from '../helpers/selectors';
 import { waitForLoad } from '../helpers/actions';
 
+/** Opens the requested BNB menu and waits for that list's primary control. */
 export async function selectMenu(page: Page, menu: string): Promise<void> {
   if (menu == "Invoice") {
     await click(page, 'Invoice Dropdown', homeSelectors.invoiceDropdown);
@@ -24,6 +25,7 @@ export async function selectMenu(page: Page, menu: string): Promise<void> {
   }
 }
 
+/** Refreshes the current BNB list and waits until loading finishes. */
 export async function refresh(page: Page): Promise<void> {
   await click(page, 'Refresh List', homeSelectors.refresh);
   await waitForLoad(page);

@@ -17,6 +17,7 @@ export type CustomerMapping = {
   'Email Test': string;
 };
 
+/** Combines existing mapping values with customer data extracted from BNB. */
 function buildCustomerMapping(
   customerName: string,
   existingCustomer?: Partial<CustomerMapping>,
@@ -45,12 +46,14 @@ export function findCustomerMapping(
 }
 
 
+/** Returns whether a customer row exists at the supplied index on the current page. */
 export async function customerExists(page: Page, idx: number): Promise<boolean> {
   if (await page.locator(customerSelectors.customerName(idx)).count() > 0) {
     return true;
   } else { return false; }
 }
 
+/** Reads the customer name at the supplied row index. */
 export async function getCustomerName(page: Page, idx: number): Promise<string> {
   const customerName = await read(page, 'Customer Name', customerSelectors.customerName(idx), 'text');
   return customerName
@@ -111,6 +114,7 @@ export async function getInvoiceEmailAddresses(page: Page): Promise<string[]> {
   return [...uniqueEmails.values()];
 }
 
+/** Extracts BNB customer data and returns its completed mapping for sheet storage. */
 export async function updateCustomerMapping(
   page: Page,
   idx: number,

@@ -3,6 +3,7 @@ import { click, write, wait } from '../helpers/actions';
 import { loginSelectors, homeSelectors } from '../helpers/selectors';
 import { config } from '../config'
 
+/** Signs in to BNB with the configured credentials and waits for the home page. */
 export async function login(page: Page, url: string): Promise<void> {
   const username = process.env.BNB_USERNAME;
   const password = process.env.BNB_PASSWORD;

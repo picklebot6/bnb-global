@@ -8,6 +8,7 @@ import { getSalesOrderUsers } from '../utils/workflowInputs';
 
 
 
+/** Processes every Open sales order for the configured users. */
 export async function main(page: Page): Promise<void> {
   // input users
   const users = getSalesOrderUsers();

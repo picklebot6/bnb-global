@@ -1,22 +1,33 @@
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Page } from '@playwright/test';
-import { click, write, wait } from '../helpers/actions';
+import { click, write, wait, waitForLoad } from '../helpers/actions';
 import { homeSelectors, invoiceSelectors } from '../helpers/selectors';
 import { config } from '../config';
 import { readEntireSheet } from './gSheets';
 
 
-interface WorkqueueItem {
+export interface InvoiceWorkqueueItem {
+  invoiceAddedDate: string;
+  invoiceNumber: string;
+  customerName: string;
+  status: string;
+  emailTo: string;
+  emailSentDate: string;
+  notes: string;
+}
+
+export interface WorkqueueItem {
   customerName: string;
   emailTo: string[];
   emailCC: string[];
   emailSubject: string;
   emailBody: string;
-  invoices: string[];
+  invoices: InvoiceWorkqueueItem[];
 }
 
 
+/** Opens the Invoice list and waits until its search control is ready. */
 export async function goToInvoice(page: Page): Promise<void> {
   await click(page, 'Invoice Dropdown', homeSelectors.invoiceDropdown);
   await click(page, 'Invoice Option', homeSelectors.invoiceOption);
@@ -26,11 +37,24 @@ export async function goToInvoice(page: Page): Promise<void> {
   await wait(page,'Invoice Search',invoiceSelectors.invSearch);
 }
 
-export async function downloadInvoice(page: Page, invNumber: string): Promise<string> {
+/**
+ * Downloads one invoice as a PDF and returns its file path. Returns undefined
+ * when the invoice search result cannot be selected.
+ */
+export async function downloadInvoice(page: Page, invNumber: string): Promise<string | undefined> {
   await write(page, 'Invoice Number', invoiceSelectors.invSearch, invNumber);
   await page.keyboard.press('Enter');
-  await page.waitForTimeout(5000);
-  await click(page, 'Searched Invoice No', invoiceSelectors.invoiceNum(invNumber));
+  await waitForLoad(page);
+
+  const invoiceResult = page.locator(`xpath=${invoiceSelectors.invoiceNum(invNumber)}`);
+  try {
+    await invoiceResult.click({ timeout: 1000 });
+  } catch {
+    console.log(`Invoice ${invNumber} could not be selected`);
+    return undefined;
+  }
+
+  await waitForLoad(page);
 
   // Print Invoice opens a separate page containing the printable document.
   await click(page, 'Print Dropdown', invoiceSelectors.printDropdown);
@@ -95,6 +119,7 @@ export async function downloadInvoice(page: Page, invNumber: string): Promise<st
   return pdfPath;
 }
 
+/** Builds customer email groups from pending invoice rows and sheet mappings. */
 export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
   const spreadsheetId = config.invoicesSheet;
 
@@ -136,19 +161,21 @@ export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
         mapping => mapping['Customer Name'] === customerName,
       );
 
-      if (!customer) {
+      const recipientSource = customer?.['Email Test'] || item['Email To'];
+
+      if (!recipientSource?.trim()) {
         throw new Error(
-          `No customer mapping found for "${customerName}".`,
+          `No email recipient was found for "${customerName}".`,
         );
       }
 
       workqueueItem = {
         customerName,
-        emailTo: customer['Email To']
+        emailTo: recipientSource
           .split(',')
           .map(email => email.trim())
           .filter(Boolean),
-        emailCC: customer['Email CC']
+        emailCC: customer?.['Email CC']
           ? customer['Email CC']
               .split(',')
               .map(email => email.trim())
@@ -165,7 +192,15 @@ export async function getWorkqueueData(): Promise<WorkqueueItem[]> {
       workqueueMap.set(customerName, workqueueItem);
     }
 
-    workqueueItem.invoices.push(invoiceNumber);
+    workqueueItem.invoices.push({
+      invoiceAddedDate: item['Invoice Added Date'] ?? '',
+      invoiceNumber,
+      customerName,
+      status: item.Status ?? '',
+      emailTo: item['Email To'] ?? '',
+      emailSentDate: item['Email Sent Date'] ?? '',
+      notes: item.Notes ?? '',
+    });
   }
 
   return Array.from(workqueueMap.values());
