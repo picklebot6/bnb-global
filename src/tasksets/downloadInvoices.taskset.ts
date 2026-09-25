@@ -48,6 +48,7 @@ export async function main(page: Page): Promise<void> {
   await deletePdfs();
 
   const workqueueData = await getWorkqueueData();
+  console.log("Workqueue Data obtained.")
 
   // login and navigate to invoice list
   await login(page, config.baseUrl);

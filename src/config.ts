@@ -23,5 +23,4 @@ export const config = {
   invoicesSheet: "1gAlqu4ZREO_Jdw72CK85-yFUq5CbzCM-7MR9_fUqnYk",
   invoicesSheetCustomerMappingTab: "Customer Mapping",
   invoicesSheetToDoTab: "Invoices 2026",
-  invoicesSheetEmailTab: "Email",
 };
