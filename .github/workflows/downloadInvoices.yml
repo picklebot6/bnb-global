@@ -64,14 +64,14 @@ jobs:
           npm run di
 
       - name: Remove downloaded invoice PDFs
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           if [ -d output/pdf ]; then
             find output/pdf -type f -name '*.pdf' -delete
           fi
 
       - name: Convert recordings to MP4
-        if: always()
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           shopt -s globstar nullglob
@@ -104,7 +104,7 @@ jobs:
           done
 
       - name: Upload recording to private R2 storage
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

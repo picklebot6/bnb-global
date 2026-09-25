@@ -155,6 +155,12 @@
       font-size: 14px;
     }
 
+    .run-actions .button.cancellation-requested:disabled {
+      background: #9aa8b2;
+      color: #fff;
+      opacity: 1;
+    }
+
     .button:active {
       transform: translateY(1px);
     }
@@ -351,6 +357,44 @@
       flex: 1;
     }
 
+    .started-actions {
+      display: grid;
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .started-actions .started-status {
+      width: 100%;
+      padding: 17px 22px;
+    }
+
+    .started-navigation {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .started-navigation .button {
+      flex: 0 1 auto;
+      background: transparent;
+      color: #3d5f72;
+      padding: 8px 14px;
+      font-size: 14px;
+    }
+
+    .started-navigation .button:hover:not(:disabled) {
+      background: #e8f3f8;
+    }
+
+    .started-cancel {
+      border-top: 1px solid #dce5eb;
+      padding-top: 18px;
+    }
+
+    .started-cancel .button {
+      width: 100%;
+    }
+
     @media (max-width: 680px) {
       .workflow-grid {
         grid-template-columns: 1fr;
@@ -514,11 +558,15 @@
         <img src="/images/botlr_working.png" alt="Botlr working on your workflow" style="display:block;width:280px;max-width:100%;height:auto;margin:0 auto 24px">
         <h2>Your workflow has successfully started! Your Botlr is working hard on it and will be done shortly.</h2>
         <p id="startedStatus" class="subtitle" aria-live="polite"></p>
-        <div class="selection-actions">
-          <button id="startedBack" class="button secondary" type="button">Back</button>
-          <button id="startedRun" class="button" type="button">Status</button>
-          <button id="startedCancel" class="button danger" type="button">Cancel</button>
-          <button class="button secondary homeButton" type="button">Home</button>
+        <div class="started-actions">
+          <button id="startedRun" class="button started-status" type="button">Status</button>
+          <div class="started-navigation">
+            <button id="startedBack" class="button" type="button">Back</button>
+            <button class="button homeButton" type="button">Home</button>
+          </div>
+          <div class="started-cancel">
+            <button id="startedCancel" class="button danger" type="button">Cancel Workflow</button>
+          </div>
         </div>
       </section>
     </section>
@@ -539,10 +587,10 @@
           <span class="dot running"></span><span>Loading logs...</span>
         </div>
         <button id="runRefresh" class="button secondary" type="button">Refresh</button>
-        <button id="runCancel" class="button danger hidden" type="button">Cancel</button>
         </div>
         <button id="watchRecording" class="button secondary hidden" type="button" style="margin-top:16px">Watch Recording</button>
         <pre id="runLogs" class="hidden" style="margin:16px 0 0; padding:16px; overflow:auto; max-height:70vh; background:#1b2430; color:#f9fafb; border-radius:12px; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap"></pre>
+        <button id="runCancel" class="button danger hidden" type="button" style="width:100%;margin-top:16px">Cancel Workflow</button>
         <video id="runRecording" class="hidden" controls style="display:block;width:100%;margin-top:16px;border-radius:12px"></video>
       </section>
     </section>

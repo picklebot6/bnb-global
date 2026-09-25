@@ -248,10 +248,10 @@ async function dispatchWorkflow(
   return json({ ok: true, runId: details.workflow_run_id ?? null });
 }
 
-/** Requests cancellation of a GitHub Actions workflow run. */
+/** Force-cancels a GitHub Actions workflow run, including conditional follow-up steps. */
 async function cancelWorkflowRun(runId: string, env: Env): Promise<Response> {
   const response = await fetch(
-    `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs/${encodeURIComponent(runId)}/cancel`,
+    `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs/${encodeURIComponent(runId)}/force-cancel`,
     { method: 'POST', headers: githubHeaders(env.GITHUB_TOKEN) },
   );
 

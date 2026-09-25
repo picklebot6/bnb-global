@@ -57,7 +57,7 @@ jobs:
           npm run ucl
 
       - name: Convert recordings to MP4
-        if: always()
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           shopt -s globstar nullglob
@@ -87,7 +87,7 @@ jobs:
           done
 
       - name: Upload recording to private R2
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

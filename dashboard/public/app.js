@@ -17,6 +17,7 @@ const workflows = {
 
 const $ = (id) => document.getElementById(id);
 let runStatusTimer;
+const cancellationRequestedRunIds = new Set();
 
 function stopRunStatusPolling() {
   if (runStatusTimer) {
@@ -153,6 +154,8 @@ async function showRunLogs(runId) {
   $('runLogs').textContent = '';
   $('watchRecording').classList.add('hidden');
   $('runCancel').classList.add('hidden');
+  $('runCancel').disabled = false;
+  $('runCancel').textContent = 'Cancel Workflow';
   $('runRecording').classList.add('hidden');
   $('runRecording').removeAttribute('src');
   $('runTitle').textContent = `${workflow.label} · Run #${runId}`;
@@ -207,15 +210,17 @@ async function showRunLogs(runId) {
   $('runCancel').onclick = async () => {
     const button = $('runCancel');
     button.disabled = true;
+    let cancellationRequested = false;
     try {
       await cancelRun(workflowId, runId);
+      cancellationRequested = true;
+      button.textContent = 'Cancellation Requested';
       setStatus($('runLogStatus'), 'Cancellation requested.', 'running');
-      button.classList.add('hidden');
       await refreshRunStatus();
     } catch (error) {
       setStatus($('runLogStatus'), error.message, 'failure');
     } finally {
-      button.disabled = false;
+      if (!cancellationRequested) button.disabled = false;
     }
   };
   $('watchRecording').onclick = async () => {
@@ -263,7 +268,7 @@ $('startedCancel').addEventListener('click', async () => {
   button.disabled = true;
   try {
     await cancelRun(selectedWorkflow, runId);
-    $('startedStatus').textContent = 'Cancellation requested.';
+    history.back();
   } catch (error) {
     $('startedStatus').textContent = error.message;
     button.disabled = false;
@@ -358,6 +363,7 @@ function renderRuns(results) {
         pending: 'queued',
         in_progress: 'progress',
       }[status] || 'queued';
+      const cancellationRequested = cancellationRequestedRunIds.has(String(run.id));
 
       return `
         <div class="run-row run-${rowTone}">
@@ -373,7 +379,7 @@ function renderRuns(results) {
           </div>
 
           <div class="run-actions">
-            ${run.status === 'in_progress' ? `<button class="button danger" type="button" data-cancel-workflow="${run.workflowId}" data-cancel-run="${run.id}">Cancel</button>` : ''}
+            ${run.status === 'in_progress' ? `<button class="button danger${cancellationRequested ? ' cancellation-requested' : ''}" type="button" data-cancel-workflow="${run.workflowId}" data-cancel-run="${run.id}"${cancellationRequested ? ' disabled' : ''}>${cancellationRequested ? 'Cancellation Requested' : 'Cancel'}</button>` : ''}
             <a href="/?workflow=${encodeURIComponent(run.workflowId)}&run=${encodeURIComponent(run.id)}">View</a>
           </div>
         </div>
@@ -384,11 +390,13 @@ function renderRuns(results) {
   for (const button of document.querySelectorAll('[data-cancel-run]')) {
     button.addEventListener('click', async () => {
       button.disabled = true;
+      button.textContent = 'Requesting…';
       try {
         await cancelRun(button.dataset.cancelWorkflow, button.dataset.cancelRun);
+        cancellationRequestedRunIds.add(String(button.dataset.cancelRun));
         await refreshAll();
       } catch (error) {
-        button.textContent = error.message;
+        button.textContent = 'Cancel';
         button.disabled = false;
       }
     });
