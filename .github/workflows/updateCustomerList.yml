@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           shopt -s globstar nullglob
-          videos=(test-results/**/*.webm)
+          videos=(test-results/**/video.webm)
 
           if [ "${#videos[@]}" -eq 0 ]; then
             echo "No recordings were produced."
@@ -86,11 +86,27 @@ jobs:
               "${video%.webm}.mp4"
           done
 
-      - name: Upload MP4 workflow videos
+      - name: Upload recording to private R2
         if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: update-customer-list-videos-${{ github.run_id }}-${{ github.run_attempt }}
-          path: test-results/**/*.mp4
-          if-no-files-found: warn
-          retention-days: 7
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+        run: |
+          video=$(find test-results -type f -name video.mp4 -print -quit)
+
+          if [ -z "$video" ]; then
+            echo "No primary recording was produced."
+            exit 0
+          fi
+
+          if ! command -v aws >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y awscli
+          fi
+
+          aws s3 cp "$video" "s3://${R2_BUCKET}/recordings/${GITHUB_RUN_ID}/video.mp4" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --no-progress

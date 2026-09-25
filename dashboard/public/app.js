@@ -43,46 +43,6 @@ function formatTime(iso) {
   });
 }
 
-/** Extracts the first MP4 file from the workflow artifact ZIP in the browser. */
-async function extractRecording(archive) {
-  const bytes = new Uint8Array(archive);
-  const view = new DataView(archive);
-  let end = bytes.length - 22;
-  while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end--;
-  if (end < 0) throw new Error('The recording archive is invalid.');
-
-  const entries = view.getUint16(end + 10, true);
-  let offset = view.getUint32(end + 16, true);
-  const decoder = new TextDecoder();
-  for (let index = 0; index < entries; index++) {
-    const compression = view.getUint16(offset + 10, true);
-    const size = view.getUint32(offset + 20, true);
-    const nameLength = view.getUint16(offset + 28, true);
-    const extraLength = view.getUint16(offset + 30, true);
-    const commentLength = view.getUint16(offset + 32, true);
-    const localOffset = view.getUint32(offset + 42, true);
-    const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLength));
-
-    if (/\.mp4$/i.test(name)) {
-      const localNameLength = view.getUint16(localOffset + 26, true);
-      const localExtraLength = view.getUint16(localOffset + 28, true);
-      const start = localOffset + 30 + localNameLength + localExtraLength;
-      const compressed = bytes.slice(start, start + size);
-      const contents = compression === 0
-        ? compressed
-        : new Uint8Array(await new Response(
-            new Blob([compressed]).stream().pipeThrough(
-              new DecompressionStream('deflate-raw'),
-            ),
-          ).arrayBuffer());
-      return new Blob([contents], { type: 'video/mp4' });
-    }
-
-    offset += 46 + nameLength + extraLength + commentLength;
-  }
-  throw new Error('No MP4 recording was found for this run.');
-}
-
 async function request(path, options = {}) {
   const response = await fetch(path, {
     cache: 'no-store',
@@ -272,7 +232,7 @@ async function showRunLogs(runId) {
         throw new Error(error.error || 'Could not load the recording.');
       }
       const recording = $('runRecording');
-      recording.src = URL.createObjectURL(await extractRecording(await response.arrayBuffer()));
+      recording.src = URL.createObjectURL(await response.blob());
       recording.classList.remove('hidden');
       button.textContent = 'Recording Loaded';
     } catch (error) {
