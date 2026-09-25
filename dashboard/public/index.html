@@ -162,6 +162,28 @@
       font-size: 14px;
     }
 
+    .run-row.run-progress {
+      display: block;
+    }
+
+    .run-progress .run-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .run-progress .run-actions .button {
+      padding: 10px 12px;
+      text-align: center;
+      justify-self: center;
+    }
+
+    .run-progress .run-actions a {
+      align-self: center;
+      text-align: center;
+    }
+
     .button.cancellation-requested:disabled {
       background: #9aa8b2;
       color: #fff;
@@ -379,6 +401,36 @@
       text-align: center;
     }
 
+    .working-top-navigation {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .working-back {
+      padding: 8px 0;
+      border: 0;
+      background: transparent;
+      color: #24688c;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .working-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 12px;
+      font-size: 16px;
+    }
+
+    .working-home svg {
+      width: 14px;
+      height: 14px;
+    }
+
     .working-image {
       display: block;
       width: 280px;
@@ -398,12 +450,6 @@
       margin-top: 24px;
     }
 
-    .started-navigation {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
     @media (max-width: 680px) {
       .workflow-grid {
         grid-template-columns: 1fr;
@@ -419,10 +465,6 @@
 
       .selection-actions {
         flex-direction: column;
-      }
-
-      .started-navigation {
-        gap: 12px;
       }
 
       .workflow-navigation {
@@ -586,16 +628,19 @@
 
     <section id="startedView" class="hidden">
       <section class="card working-card">
+        <nav class="working-top-navigation" aria-label="Workflow navigation">
+          <button id="startedBack" class="working-back" type="button">← Back</button>
+          <button class="button secondary homeButton working-home" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/></svg>
+            <span>Home</span>
+          </button>
+        </nav>
         <img class="working-image" src="/images/botlr_working.png" alt="Botlr working on your workflow">
         <h2>Your workflow has successfully started! Your Botlr is working hard on it and will be done shortly.</h2>
         <div class="status working-run-state"><span class="dot running"></span><span>Running...</span></div>
         <p id="startedStatus" class="subtitle" aria-live="polite"></p>
         <div class="started-actions">
           <button id="startedRun" class="button" type="button">View Run Status</button>
-          <div class="started-navigation">
-            <button id="startedBack" class="button secondary" type="button">Back</button>
-            <button class="button secondary homeButton" type="button">Home</button>
-          </div>
           <button id="startedCancel" class="button danger" type="button">Cancel Workflow</button>
         </div>
       </section>

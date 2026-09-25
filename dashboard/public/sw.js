@@ -1,4 +1,4 @@
-const CACHE = 'botlr-automation-v4.5.2';
+const CACHE = 'botlr-automation-v4.5.3';
 const APP_SHELL = [
   '/',
   '/index.html',

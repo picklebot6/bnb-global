@@ -403,8 +403,9 @@ function renderRuns(results) {
           </div>
 
           <div class="run-actions">
-            ${run.status === 'in_progress' ? `<button class="button danger${cancellationRequested ? ' cancellation-requested' : ''}" type="button" data-cancel-workflow="${run.workflowId}" data-cancel-run="${run.id}"${cancellationRequested ? ' disabled' : ''}>${cancellationRequested ? 'Cancellation Requested' : 'Cancel'}</button>` : ''}
-            <a href="/?workflow=${encodeURIComponent(run.workflowId)}&run=${encodeURIComponent(run.id)}">View</a>
+            ${run.status === 'in_progress'
+              ? `<button class="button danger${cancellationRequested ? ' cancellation-requested' : ''}" type="button" data-cancel-workflow="${run.workflowId}" data-cancel-run="${run.id}"${cancellationRequested ? ' disabled' : ''}>${cancellationRequested ? 'Cancellation Requested' : 'Cancel'}</button><a href="/?workflow=${encodeURIComponent(run.workflowId)}&run=${encodeURIComponent(run.id)}">View</a>`
+              : `<a href="/?workflow=${encodeURIComponent(run.workflowId)}&run=${encodeURIComponent(run.id)}">View</a>`}
           </div>
         </div>
       `;
