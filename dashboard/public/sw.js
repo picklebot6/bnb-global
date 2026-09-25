@@ -1,4 +1,4 @@
-const CACHE = 'bnb-automation-v4.3';
+const CACHE = 'botlr-automation-v4.5.2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -31,6 +31,13 @@ self.addEventListener('activate', event => {
   );
 
   self.clients.claim();
+});
+
+/** Shares the active cache name so the dashboard can display its version. */
+self.addEventListener('message', event => {
+  if (event.data?.type === 'GET_CACHE_VERSION') {
+    event.source?.postMessage({ type: 'CACHE_VERSION', cacheName: CACHE });
+  }
 });
 
 self.addEventListener('fetch', event => {

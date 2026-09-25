@@ -19,6 +19,24 @@ const $ = (id) => document.getElementById(id);
 let runStatusTimer;
 const cancellationRequestedRunIds = new Set();
 
+function hasCancellationBeenRequested(runId) {
+  return cancellationRequestedRunIds.has(String(runId));
+}
+
+function markCancellationRequested(runId) {
+  cancellationRequestedRunIds.add(String(runId));
+}
+
+function syncCancelButton(button, runId, defaultLabel) {
+  const cancellationRequested = hasCancellationBeenRequested(runId);
+  button.disabled = cancellationRequested;
+  button.textContent = cancellationRequested
+    ? 'Cancellation Requested'
+    : defaultLabel;
+  button.classList.toggle('cancellation-requested', cancellationRequested);
+  return cancellationRequested;
+}
+
 function stopRunStatusPolling() {
   if (runStatusTimer) {
     clearTimeout(runStatusTimer);
@@ -110,7 +128,13 @@ async function renderRoute() {
     showOnly('startedView');
     const runId = params.get('started');
     $('startedRun').disabled = !/^\d+$/.test(runId);
-    $('startedCancel').disabled = !/^\d+$/.test(runId);
+    const cancellationRequested = syncCancelButton(
+      $('startedCancel'),
+      runId,
+      'Cancel Workflow',
+    );
+    $('startedCancel').disabled =
+      cancellationRequested || !/^\d+$/.test(runId);
     $('startedStatus').textContent = $('startedRun').disabled ? 'The workflow was accepted, but its run link was unavailable. Use Back to check Recent Runs.' : '';
     return;
   }
@@ -154,8 +178,7 @@ async function showRunLogs(runId) {
   $('runLogs').textContent = '';
   $('watchRecording').classList.add('hidden');
   $('runCancel').classList.add('hidden');
-  $('runCancel').disabled = false;
-  $('runCancel').textContent = 'Cancel Workflow';
+  syncCancelButton($('runCancel'), runId, 'Cancel Workflow');
   $('runRecording').classList.add('hidden');
   $('runRecording').removeAttribute('src');
   $('runTitle').textContent = `${workflow.label} · Run #${runId}`;
@@ -173,6 +196,7 @@ async function showRunLogs(runId) {
       const runState = result.run.conclusion || result.run.status;
       const canCancel = result.run.status === 'in_progress';
       $('runCancel').classList.toggle('hidden', !canCancel);
+      if (canCancel) syncCancelButton($('runCancel'), runId, 'Cancel Workflow');
       const jobLines = result.jobs.flatMap(job => [
         `${job.name}: ${formatStatus(job.conclusion || job.status)}`,
         ...job.steps.map(step => `  ${step.name}: ${formatStatus(step.conclusion || step.status)}`),
@@ -210,17 +234,15 @@ async function showRunLogs(runId) {
   $('runCancel').onclick = async () => {
     const button = $('runCancel');
     button.disabled = true;
-    let cancellationRequested = false;
     try {
       await cancelRun(workflowId, runId);
-      cancellationRequested = true;
-      button.textContent = 'Cancellation Requested';
+      markCancellationRequested(runId);
+      syncCancelButton(button, runId, 'Cancel Workflow');
       setStatus($('runLogStatus'), 'Cancellation requested.', 'running');
       await refreshRunStatus();
     } catch (error) {
       setStatus($('runLogStatus'), error.message, 'failure');
-    } finally {
-      if (!cancellationRequested) button.disabled = false;
+      syncCancelButton(button, runId, 'Cancel Workflow');
     }
   };
   $('watchRecording').onclick = async () => {
@@ -268,6 +290,7 @@ $('startedCancel').addEventListener('click', async () => {
   button.disabled = true;
   try {
     await cancelRun(selectedWorkflow, runId);
+    markCancellationRequested(runId);
     history.back();
   } catch (error) {
     $('startedStatus').textContent = error.message;
@@ -357,13 +380,14 @@ function renderRuns(results) {
         success: 'success',
         failure: 'failure',
         timed_out: 'failure',
+        cancelled: 'cancelled',
         queued: 'queued',
         waiting: 'queued',
         requested: 'queued',
         pending: 'queued',
         in_progress: 'progress',
       }[status] || 'queued';
-      const cancellationRequested = cancellationRequestedRunIds.has(String(run.id));
+      const cancellationRequested = hasCancellationBeenRequested(run.id);
 
       return `
         <div class="run-row run-${rowTone}">
@@ -393,7 +417,7 @@ function renderRuns(results) {
       button.textContent = 'Requesting…';
       try {
         await cancelRun(button.dataset.cancelWorkflow, button.dataset.cancelRun);
-        cancellationRequestedRunIds.add(String(button.dataset.cancelRun));
+        markCancellationRequested(button.dataset.cancelRun);
         await refreshAll();
       } catch (error) {
         button.textContent = 'Cancel';
@@ -604,8 +628,28 @@ checkSession().catch(() =>
   showView(false),
 );
 
+function showCacheVersion(cacheName) {
+  const version = String(cacheName).match(/-v(.+)$/)?.[1];
+  $('appVersion').textContent = version
+    ? `Version ${version}`
+    : 'Version unavailable';
+}
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
     .register('/sw.js')
+    .then(() => {
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data?.type === 'CACHE_VERSION') {
+          showCacheVersion(event.data.cacheName);
+        }
+      });
+
+      return navigator.serviceWorker.ready;
+    })
+    .then(registration => {
+      const worker = navigator.serviceWorker.controller || registration.active;
+      worker?.postMessage({ type: 'GET_CACHE_VERSION' });
+    })
     .catch(() => {});
 }
