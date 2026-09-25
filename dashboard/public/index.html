@@ -123,6 +123,25 @@
       background: #d9e2e9;
     }
 
+    .button.refresh-icon,
+    .button.refresh-icon:hover:not(:disabled) {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .refresh-icon img {
+      display: block;
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
+
     .button.danger {
       background: #b45353;
       color: white;
@@ -162,26 +181,19 @@
       font-size: 14px;
     }
 
-    .run-row.run-progress {
-      display: block;
+    .run-details {
+      min-width: 0;
     }
 
-    .run-progress .run-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .run-progress .run-actions .button {
-      padding: 10px 12px;
-      text-align: center;
-      justify-self: center;
-    }
-
-    .run-progress .run-actions a {
-      align-self: center;
-      text-align: center;
+    .run-cancel-hint {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: #e8f3f8;
+      color: #24688c;
+      font-size: 13px;
+      font-weight: 700;
     }
 
     .button.cancellation-requested:disabled {
@@ -263,6 +275,149 @@
       margin-top: 3px;
     }
 
+    .activity-card {
+      margin-top: 20px;
+    }
+
+    .welcome-card {
+      max-width: 900px;
+      margin: 24px auto 0;
+    }
+
+    .activity-heading {
+      margin: 0;
+    }
+
+    .activity-subtitle {
+      margin: 4px 0 0;
+      color: #596775;
+      font-size: 13px;
+    }
+
+    .activity-total {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #e8f3f8;
+      color: #24688c;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .activity-filter {
+      width: auto;
+      min-width: 128px;
+      padding: 8px 28px;
+      border: 0;
+      border-radius: 999px;
+      background: #e8f3f8;
+      color: #24688c;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      text-align-last: center;
+    }
+
+    .activity-chart {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .activity-day {
+      display: grid;
+      grid-template-rows: 20px 130px auto auto;
+      gap: 6px;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .activity-count {
+      color: #596775;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .activity-bar-slot {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      border-bottom: 1px solid #d9e2e9;
+    }
+
+    .activity-bar {
+      display: flex;
+      flex-direction: column;
+      width: min(38px, 100%);
+      overflow: hidden;
+      border-radius: 8px 8px 2px 2px;
+      box-shadow: 0 2px 5px rgba(27, 36, 48, .12);
+    }
+
+    .activity-bar.empty {
+      height: 4px !important;
+      background: #d9e2e9;
+      box-shadow: none;
+    }
+
+    .activity-segment { min-height: 0; }
+    .activity-success { background: #74ad86; }
+    .activity-failure { background: #cc8989; }
+    .activity-progress { background: #dfa66a; }
+    .activity-queued { background: #9faeb9; }
+
+    .activity-label {
+      color: #596775;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .activity-date {
+      color: #8a98a5;
+      font-size: 11px;
+    }
+
+    .activity-chart.automation-breakdown {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 340px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .automation-breakdown .activity-day {
+      grid-template-rows: 20px 130px auto;
+    }
+
+    .automation-breakdown .activity-label {
+      line-height: 1.25;
+    }
+
+    .activity-automation {
+      background: #74bfe3;
+    }
+
+    .activity-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 14px;
+      margin: 18px 0 0;
+      color: #596775;
+      font-size: 12px;
+    }
+
+    .activity-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .activity-legend i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
     a {
       color: inherit;
     }
@@ -338,10 +493,23 @@
       gap: 12px;
     }
 
+    .view-all-runs {
+      display: block;
+      margin: 16px auto 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #24688c;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
     /* Process Sales Orders selection */
 
     .selection-card {
-      max-width: 600px;
+      max-width: 640px;
       margin: 0 auto;
     }
 
@@ -484,6 +652,10 @@
       #workflowSwitcher {
         text-align-last: center;
       }
+
+      .activity-chart {
+        gap: 6px;
+      }
     }
   </style>
 </head>
@@ -524,11 +696,30 @@
     </section>
 
     <section id="homeView" class="hidden">
-      <header><h1>BNB Automation Botlr</h1><button id="homeLogout" class="button secondary">Log Out</button></header>
-      <section class="card" style="max-width:600px;margin:12vh auto 0">
+      <header><h1>Botlr Automation</h1><button id="homeLogout" class="button secondary">Log Out</button></header>
+      <section class="card welcome-card">
         <h2>Welcome to your Botlr Agent.</h2>
         <img src="/images/botlr.png" alt="Botlr" style="display:block;width:240px;max-width:100%;height:auto;margin:24px auto;">
         <select id="workflowSelect" aria-label="Select your workflow"><option value="" disabled selected>Select your workflow</option><option value="downloadInvoices">Download Invoices</option><option value="processSalesOrders">Process Sales Orders</option></select>
+      </section>
+      <section class="card activity-card" aria-labelledby="activityTitle">
+        <div class="toolbar">
+          <div>
+            <h2 id="activityTitle" class="activity-heading">BNB Global - Dashboard</h2>
+            <p id="activitySubtitle" class="activity-subtitle">Runs started in the past 7 days</p>
+          </div>
+          <select id="activityPeriod" class="activity-filter" aria-label="Dashboard time period">
+            <option value="week" selected>Weekly</option>
+            <option value="today">Today</option>
+          </select>
+        </div>
+        <div id="activityChart" class="activity-chart" aria-label="Automation activity for the past 7 days"></div>
+        <div id="activityLegend" class="activity-legend" aria-label="Automation status legend">
+          <span><i class="activity-success"></i>Success</span>
+          <span><i class="activity-failure"></i>Failed</span>
+          <span><i class="activity-progress"></i>In Progress</span>
+          <span><i class="activity-queued"></i>Queued</span>
+        </div>
       </section>
     </section>
     <!-- Selected workflow -->
@@ -611,10 +802,12 @@
 
           <button
             id="refreshButton"
-            class="button secondary"
+            class="button secondary refresh-icon"
             type="button"
+            aria-label="Refresh recent runs"
+            title="Refresh recent runs"
           >
-            Refresh
+            <img src="/images/botlr_refresh.png" alt="">
           </button>
         </div>
 
@@ -622,8 +815,31 @@
           id="runs"
           style="margin-top:8px"
         ></div>
+        <button id="viewAllRuns" class="view-all-runs" type="button">View All Runs</button>
       </section>
 
+    </section>
+
+    <section id="allRunsView" class="hidden">
+      <header>
+        <div>
+          <h1 id="allRunsTitle">All Runs</h1>
+          <p class="subtitle">Workflow history</p>
+        </div>
+        <button id="allRunsBack" class="button secondary" type="button">Back</button>
+      </header>
+
+      <section class="card">
+        <div class="toolbar">
+          <select id="allRunsPeriod" aria-label="Run time period">
+            <option value="today" selected>Today</option>
+            <option value="week">Past Week</option>
+            <option value="month">Past Month</option>
+          </select>
+          <button id="allRunsRefresh" class="button secondary refresh-icon" type="button" aria-label="Refresh runs" title="Refresh runs"><img src="/images/botlr_refresh.png" alt=""></button>
+        </div>
+        <div id="allRuns" style="margin-top:16px"></div>
+      </section>
     </section>
 
     <section id="startedView" class="hidden">
@@ -661,10 +877,10 @@
         <div id="runLogStatus" class="status" aria-live="polite">
           <span class="dot running"></span><span>Loading logs...</span>
         </div>
-        <button id="runRefresh" class="button secondary" type="button">Refresh</button>
+        <button id="runRefresh" class="button secondary refresh-icon" type="button" aria-label="Refresh run status" title="Refresh run status"><img src="/images/botlr_refresh.png" alt=""></button>
         </div>
         <button id="watchRecording" class="button secondary hidden" type="button" style="margin-top:16px">Watch Recording</button>
-        <pre id="runLogs" class="hidden" style="margin:16px 0 0; padding:16px; overflow:auto; max-height:70vh; background:#1b2430; color:#f9fafb; border-radius:12px; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap"></pre>
+        <pre id="runLogs" class="hidden" style="margin:16px 0 0; padding:16px; overflow:auto; max-height:35vh; background:#1b2430; color:#f9fafb; border-radius:12px; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap"></pre>
         <button id="runCancel" class="button danger hidden" type="button" style="width:100%;margin-top:16px">Cancel Workflow</button>
         <video id="runRecording" class="hidden" controls style="display:block;width:100%;margin-top:16px;border-radius:12px"></video>
       </section>
@@ -683,6 +899,9 @@
       </header>
 
       <section class="card selection-card">
+        <nav class="working-top-navigation" aria-label="Selection navigation">
+          <button id="psoBack" class="working-back" type="button">← Back</button>
+        </nav>
 
         <h2 style="margin:0">
           Select Users
@@ -733,15 +952,6 @@
         </div>
 
         <div class="selection-actions">
-
-          <button
-            id="psoBack"
-            class="button secondary"
-            type="button"
-          >
-            Back
-          </button>
-
           <button
             id="psoRun"
             class="button"

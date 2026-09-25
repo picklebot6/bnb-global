@@ -272,7 +272,7 @@ async function getLatestRuns(
     `/actions/workflows/` +
     `${encodeURIComponent(workflowFile)}` +
     `/runs?branch=${encodeURIComponent(REF)}` +
-    `&per_page=5`;
+    `&per_page=100`;
 
   const response = await fetch(url, {
     headers: githubHeaders(env.GITHUB_TOKEN),
