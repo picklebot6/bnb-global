@@ -4,6 +4,14 @@ import { homeSelectors, salesSelectors } from '../helpers/selectors';
 import { waitForLoad } from '../helpers/actions';
 import { config } from '../config'
 
+async function clickYesIfPresent(page: Page): Promise<void> {
+  try {
+    await click(page, 'Yes', salesSelectors.yesButton);
+  } catch {
+    console.log('No confirmation dialog appeared.');
+  }
+}
+
 /** Opens the Sales list and waits for the status filter. */
 export async function goToSales(page: Page): Promise<void> {
   await click(page, 'Sales Dropdown', homeSelectors.salesDropdown);
@@ -26,26 +34,22 @@ export async function processSalesOrder(page: Page): Promise<void> {
   await waitForLoad(page)
   // save
   await click(page,'Save',salesSelectors.saveButton);
-  try {
-    await click(page,'Yes',salesSelectors.yesButton);
-  } catch {
-    console.log("No A/R alert")
-  }
+  await clickYesIfPresent(page);
   await waitForLoad(page)
   // Pick Request
   await click(page,'Pick Request',salesSelectors.pickRequestButton);
-  await click(page,'Yes',salesSelectors.yesButton);
+  await clickYesIfPresent(page);
   await waitForLoad(page)
   // save
   await click(page,'Save',salesSelectors.saveButtonPickList);
   await waitForLoad(page)
   // acct approve
   await click(page,'Acct Approve',salesSelectors.acctApprove);
-  await click(page,'Yes',salesSelectors.yesButton);
+  await clickYesIfPresent(page);
   await waitForLoad(page)
   //qty approve
   await click(page,'Qty Approve',salesSelectors.qtyApprove);
-  await click(page,'Yes',salesSelectors.yesButton);
+  await clickYesIfPresent(page);
   await waitForLoad(page)
 
   //close
